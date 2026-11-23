@@ -19,12 +19,12 @@ Even without these mods, this rare overdrive is special when combined with the a
 Also in front of the amp (in true post-metal fashion) are three time-based effects: **Tremolo**, **Analog Delay**, and **Hall Reverb**. Using these effects before the amps on high gain settings creates huge swells of lo-fi ambience, and using them in front of the amps set clean creates beautiful and delicate tones that feel amazing to play.  
 
 ### Amps
-Two 100-watt heads, component-modeled with LiveSPICE. Every control works just as it would on the real amps. Amp 1: **Trainer Mark III*** - a Canadian-made all-tube 2x12 combo offering loud, punchy cleans with fuller midrange than a typical high-watt 2x12 combo, and wonderful breakup when pushed with the overdrive pedal. It features a Treble Boost switch that compliments the tone perfectly. Amp 2: **Rocker 100*** - a British 2-channel all-tube beast; much warmer and rounder sounding than the Trainer. Capable of delivering full-on fuzzy doom metal rhythm tones when combined with the overdrive pedal (and its Fatness mod.) The clean channel reacts amazingly with the pre & post FX.
+Two 100-watt amps, component-modeled with LiveSPICE. Every control works just as it would on the real amps. Amp 1: **Trainer Mark III** - a Canadian-made all-tube circuit offering loud, punchy cleans with a full midrange, and wonderful breakup when pushed with the overdrive pedal. It features a Treble Boost switch that compliments the tone perfectly. Amp 2: **Rocker 100*** - a British 2-channel all-tube beast; much warmer and rounder sounding than the Trainer. Capable of delivering full-on fuzzy doom metal rhythm tones when combined with the overdrive pedal (and its Fatness mod.) The clean channel reacts organically with the pre & post FX.
 
 ### Cabinets & IR Loader
 The plugin features four bespoke cabinet IRs shot by **INSERT PERSON HERE** specifically for Follower. Cabinets range from mid-forward to biting to warm to bass-heavy.  
 
-Follower also has a built-in IR loader for use with external IRs, as well as a bypass, which disables cabinet simulation with automatic −12 dB level compensation for external IR loaders.
+Follower also has a **built-in IR loader** for use with external IRs, as well as a bypass, which disables cabinet simulation with automatic −12 dB level compensation for external IR loaders.
 
 ### Stereo Tape Echo
 After the cabinet, in true stereo, lives an implementation of the incredible Tape Echo by Dusk Audio. This open source 3-head tape echo and spring reverb engine is the final piece of the puzzle in Follower, adding warm, lush width and dimension to its already huge post-metal tonality. This section of the plugin is easy to get lost in - be warned!  
