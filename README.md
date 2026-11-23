@@ -13,8 +13,8 @@ A defining element of the Salvation sound is running time-based effects ahead of
 ## Features
 
 ### Pedals
-In front of the amps resides a component-modeled rare boutique Swedish overdrive pedal that was key to the guitar sound on Salvation. This circuit has been modded with two additional controls: **Fatness** and **Voltage**.
-Fatness adjusts the pre-clipping high-pass corner from tight, focused lows (310 Hz at 0.0) down to heavy sub-bass sludge weight (42 Hz at 10.0). Voltage scales internal op-amp supply rails and LED clipping thresholds. Lower settings (4.5 V) create spongy, compressed battery sag; higher settings (18.0 V) deliver uncompressed clean boost headroom. Even without these mods, this rare overdrive is special when combined with the amps it feeds.  
+**Overdrive**: In front of the amps resides a component-modeled rare boutique Swedish overdrive pedal that was key to the guitar sound on Salvation. This circuit has been modded with two additional controls: **Fatness** and **Voltage**.
+Even without these mods, this rare overdrive is special when combined with the amps it feeds.  
 
 Also in front of the amp (in true post-metal fashion) are three time-based effects: **Tremolo**, **Analog Delay**, and **Hall Reverb**. Using these effects before the amps on high gain settings creates huge swells of lo-fi ambience, and using them in front of the amps set clean creates beautiful and delicate tones that feel amazing to play.  
 
@@ -25,6 +25,14 @@ Two 100-watt heads, component-modeled with LiveSPICE. Every control works just a
 The plugin features four bespoke cabinet IRs shot by **INSERT PERSON HERE** specifically for Follower. Cabinets range from mid-forward to biting to warm to bass-heavy.  
 
 Follower also has a built-in IR loader for use with external IRs, as well as a bypass, which disables cabinet simulation with automatic −12 dB level compensation for external IR loaders.
+
+### Stereo Tape Echo
+After the cabinet, in true stereo, lives an implementation of the incredible Tape Echo by Dusk Audio. This open source 3-head tape echo and spring reverb engine is the final piece of the puzzle in Follower, adding warm, lush width and dimension to its already huge post-metal tonality. This section of the plugin is easy to get lost in - be warned!  
+
+*Licensing notice: Tape Echo by Dusk Audio is released under the GPLv3 license, the same license that Follower is released under.*  
+
+### Utility Features
+Lastly, Follower includes an effective noise gate, with a toggle for fast or slow release, and high-pass/low-pass filters, for getting mix-ready tones.  
 
 ## Screenshots  
 
