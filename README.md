@@ -1,5 +1,8 @@
 ![Static Badge](https://img.shields.io/badge/Version-1.00-white) 
 # Follower
+<p align="center">
+   <img width="656" height="131" alt="FollowerLogo" src="https://github.com/user-attachments/assets/0b0b14ee-461a-44bb-9a54-a3c3c9762ec4" />  
+</p>
 VST3 component-modeled amp sim suite using LiveSPICE and JUCE Framework, vibe-coded and then refined with a human touch   
 
 ## Overview & Design Philosophy
