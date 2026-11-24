@@ -26,7 +26,7 @@ Amp 1: **Trainer Mark III** - a Canadian-made all-tube circuit offering loud, pu
 Amp 2: **Rocker 100** - a British 2-channel all-tube beast; much warmer and rounder sounding than the Trainer. Capable of delivering full-on fuzzy doom metal rhythm tones when combined with the overdrive pedal (and its Fatness mod.) The clean channel reacts organically with the pre & post FX.
 
 ### Cabinets & IR Loader
-The plugin features four high-quality cabinet IRs captured by **Deathblossom Audio**. These cabinets pair perfectly with Follower, offering a range of tonalities useful for post-metal and beyond.  
+The plugin features four high-quality cabinet IRs captured by [**Deathblossom Audio**.](https://www.instagram.com/deathblossomaudio) These cabinets pair perfectly with Follower, offering a range of tonalities useful for post-metal and beyond.  
 
 Follower also has a **built-in IR loader** for use with external IRs, as well as a bypass, which disables cabinet simulation with automatic −12 dB level compensation for external IR loaders.
 
