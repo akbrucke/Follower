@@ -142,6 +142,9 @@ private:
 
     int   lastAmpChoice = 0;
     bool  lastGateFastState = false;
+    bool  lastOdActive      = false;
+    bool  lastPreActive     = false;
+    bool  lastTapeActive    = false;
     float smoothJewelGlow = 0.0f;
 
     juce::Rectangle<int> odPanelBounds;

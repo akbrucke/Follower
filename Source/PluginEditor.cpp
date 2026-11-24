@@ -436,6 +436,15 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
     addAndMakeVisible (showOdBtn);
     addAndMakeVisible (showPreFxBtn);
     addAndMakeVisible (showTapeBtn);
+    lastOdActive   = p.apvts.getRawParameterValue ("odOn")->load() > 0.5f;
+    lastPreActive  = (p.apvts.getRawParameterValue ("tremOn")->load() > 0.5f)
+                  || (p.apvts.getRawParameterValue ("delayOn")->load() > 0.5f)
+                  || (p.apvts.getRawParameterValue ("revOn")->load() > 0.5f);
+    lastTapeActive = p.apvts.getRawParameterValue ("tapeOn")->load() > 0.5f;
+
+    showOdBtn.getProperties().set ("circuitActive", lastOdActive);
+    showPreFxBtn.getProperties().set ("circuitActive", lastPreActive);
+    showTapeBtn.getProperties().set ("circuitActive", lastTapeActive);
 
     // Left Overdrive Drawer
     odOnAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "odOn", odOnBtn);
@@ -661,36 +670,32 @@ void FollowerAudioProcessorEditor::timerCallback()
     if (animating || ampChoice != lastAmpChoice || gateFast != lastGateFastState)
         syncVisibilityAndDimensions (false);
 
-    // Sync header pill active LED border/dot with circuit bypass states (only repaint if changed)
-    auto updatePillLed = [] (juce::ToggleButton& btn, bool active)
+    // Sync header pill active LED border/dot with circuit bypass states
+    const bool odActive   = audioProcessor.apvts.getRawParameterValue ("odOn")->load() > 0.5f;
+    const bool preActive  = (audioProcessor.apvts.getRawParameterValue ("tremOn")->load() > 0.5f)
+                         || (audioProcessor.apvts.getRawParameterValue ("delayOn")->load() > 0.5f)
+                         || (audioProcessor.apvts.getRawParameterValue ("revOn")->load() > 0.5f);
+    const bool tapeActive = audioProcessor.apvts.getRawParameterValue ("tapeOn")->load() > 0.5f;
+
+    if (odActive != lastOdActive)
     {
-        const bool prev = static_cast<bool> (btn.getProperties().getWithDefault ("circuitActive", false));
-        if (prev != active)
-        {
-            btn.getProperties().set ("circuitActive", active);
-            btn.repaint();
-        }
-    };
-
-    updatePillLed (showOdBtn,    audioProcessor.apvts.getRawParameterValue ("odOn")->load() > 0.5f);
-    updatePillLed (showPreFxBtn, (audioProcessor.apvts.getRawParameterValue ("tremOn")->load() > 0.5f)
-                              || (audioProcessor.apvts.getRawParameterValue ("delayOn")->load() > 0.5f)
-                              || (audioProcessor.apvts.getRawParameterValue ("revOn")->load() > 0.5f));
-    updatePillLed (showTapeBtn,  audioProcessor.apvts.getRawParameterValue ("tapeOn")->load() > 0.5f);
-
-    // Only repaint the small top-right jewel indicator rectangle when glow changes
-    const float rawJewel = audioProcessor.jewelDriveActivity.load();
-    const float nextGlow = (rawJewel > smoothJewelGlow) ? rawJewel : (smoothJewelGlow * 0.82f + rawJewel * 0.18f);
-
-    if (std::abs (nextGlow - smoothJewelGlow) > 0.003f)
-    {
-        smoothJewelGlow = nextGlow;
-        repaint (getWidth() - 72, 6, 66, 66);
+        lastOdActive = odActive;
+        showOdBtn.getProperties().set ("circuitActive", odActive);
+        showOdBtn.repaint();
     }
-    else if (smoothJewelGlow != 0.0f && nextGlow <= 0.003f)
+
+    if (preActive != lastPreActive)
     {
-        smoothJewelGlow = 0.0f;
-        repaint (getWidth() - 72, 6, 66, 66);
+        lastPreActive = preActive;
+        showPreFxBtn.getProperties().set ("circuitActive", preActive);
+        showPreFxBtn.repaint();
+    }
+
+    if (tapeActive != lastTapeActive)
+    {
+        lastTapeActive = tapeActive;
+        showTapeBtn.getProperties().set ("circuitActive", tapeActive);
+        showTapeBtn.repaint();
     }
 }
 
