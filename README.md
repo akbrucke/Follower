@@ -93,7 +93,7 @@ On macOS, this would be: `~/Library/Audio/Plug-Ins/VST3/`
 - *Note that Logic Pro and GarageBand only load Audio Units, so they won't see the VST3*
 
 ## Changelog  
-FOLLOWER V1.01 (November 24, 2026)
+FOLLOWER V1.01 (November 24, 2026)  
 -Improved graphics rendering  
 -Fixed drawer toggle LED states  
 
