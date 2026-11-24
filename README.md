@@ -3,7 +3,7 @@
 <p align="center">
    <img width="656" height="131" alt="FollowerLogo" src="https://github.com/user-attachments/assets/0b0b14ee-461a-44bb-9a54-a3c3c9762ec4" />  
 </p>
-VST3 component-modeled post-metal amp sim suite using LiveSPICE and JUCE Framework, vibe-coded and then refined with a human touch   
+VST3 component-modeled post-metal amp sim suite made with LiveSPICE using JUCE Framework, vibe-coded and then refined with a human touch   
 
 ## Overview & Design Philosophy
 Follower is a complete guitar amplifier and effects workstation engineered to recreate the monolithic, atmospheric guitar tones of Cult of Luna's landmark album Salvation. Rather than isolating a single amplifier in a sterile studio chain, Follower models the entire signal path: Boutique op-amp overdrive and pre-amplifier modulation, delay, and reverb straight into two switchable, volume-matched 100-watt tube heads, four cabinet IRs provided by **Deathblossom Audio**, and a true stereo post-cabinet implementation of Dusk Audio's Tape Echo.  
