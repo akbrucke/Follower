@@ -3,10 +3,10 @@
 <p align="center">
    <img width="656" height="131" alt="FollowerLogo" src="https://github.com/user-attachments/assets/0b0b14ee-461a-44bb-9a54-a3c3c9762ec4" />  
 </p>
-VST3 component-modeled amp sim suite using LiveSPICE and JUCE Framework, vibe-coded and then refined with a human touch   
+VST3 component-modeled post-metal amp sim suite using LiveSPICE and JUCE Framework, vibe-coded and then refined with a human touch   
 
 ## Overview & Design Philosophy
-Follower is a complete guitar amplifier and effects workstation engineered to recreate the monolithic, atmospheric guitar tones of Cult of Luna's landmark album Salvation. Rather than isolating a single amplifier in a sterile studio chain, Follower models the entire signal path - from boutique op-amp overdrive and pre-amplifier modulation, delay, and reverb straight into two switchable, volume-matched 100-watt tube heads, bespoke cabinet IRs shot by **INSERT PERSON HERE**, and a true stereo post-cabinet tape echo.  
+Follower is a complete guitar amplifier and effects workstation engineered to recreate the monolithic, atmospheric guitar tones of Cult of Luna's landmark album Salvation. Rather than isolating a single amplifier in a sterile studio chain, Follower models the entire signal path - from boutique op-amp overdrive and pre-amplifier modulation, delay, and reverb straight into two switchable, volume-matched 100-watt tube heads, four cabinet IRs provided by **Deathblossom Audio**, and a true stereo post-cabinet tape echo.  
 
 A defining element of the Salvation sound is running time-based effects ahead of high-headroom, saturating tube preamps so that tremolo swells, analog delay repeats, and cavernous reverb tails bloom organically into power-tube compression. Follower pairs this pre-amp pedalboard with independent parameter recall for both the Trainer Mark III and Rocker 100 amp heads, plus three collapsible drawers that keep the workspace compact until you need to tweak. 
 
@@ -26,7 +26,7 @@ Amp 1: **Trainer Mark III** - a Canadian-made all-tube circuit offering loud, pu
 Amp 2: **Rocker 100** - a British 2-channel all-tube beast; much warmer and rounder sounding than the Trainer. Capable of delivering full-on fuzzy doom metal rhythm tones when combined with the overdrive pedal (and its Fatness mod.) The clean channel reacts organically with the pre & post FX.
 
 ### Cabinets & IR Loader
-The plugin features four bespoke cabinet IRs shot by **INSERT PERSON HERE** specifically for Follower. Cabinets range from mid-forward to biting to warm to bass-heavy.  
+The plugin features four high-quality cabinet IRs captured by **Deathblossom Audio**. These cabinets pair perfectly with Follower, offering a range of tonalities useful for post-metal and beyond.  
 
 Follower also has a **built-in IR loader** for use with external IRs, as well as a bypass, which disables cabinet simulation with automatic −12 dB level compensation for external IR loaders.
 
@@ -39,8 +39,7 @@ After the cabinet, in true stereo, lives an implementation of the incredible Tap
 Lastly, Follower includes an effective noise gate, with a toggle for fast or slow release, and high-pass/low-pass filters, for getting mix-ready tones.  
 
 ## Screenshots  
-
-**INSERT SCREENSHOTS HERE**
+<img width="1142" height="604" alt="Follower" src="https://github.com/user-attachments/assets/a03a27b5-76ca-4882-8886-14f331356daf" />
 
 ## Installation
 Currently, Follower is released for Windows 10/11 only, but Mac and Linux releases are coming soon. To grab the latest prebuilt release, head to the [releases page.](https://github.com/akbrucke/Follower/releases) Included with the release download is a thorough user manual, a collection of presets, and installation instructions.
@@ -93,6 +92,6 @@ On macOS, this would be: `~/Library/Audio/Plug-Ins/VST3/`
 - *Note that Logic Pro and GarageBand only load Audio Units, so they won't see the VST3*
 
 ## Changelog
-FOLLOWER V1.00 (INSERT DATE HERE, 2026)  
+FOLLOWER V1.00 (November 24, 2026)  
 -Released
 
