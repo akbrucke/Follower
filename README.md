@@ -31,7 +31,7 @@ The plugin features four high-quality cabinet IRs captured by [**Deathblossom Au
 Follower also has a **built-in IR loader** for use with external IRs, as well as a bypass, which disables cabinet simulation with automatic −12 dB level compensation for external IR loaders.
 
 ### Stereo Tape Echo
-After the cabinet, in true stereo, lives an implementation of the incredible Tape Echo by Dusk Audio. This open source 3-head tape echo and spring reverb engine is the final piece of the puzzle in Follower, adding warm, lush width and dimension to its already huge post-metal tonality. This section of the plugin is easy to get lost in - be warned!  
+After the cabinet, in true stereo, lives an implementation of the incredible Tape Echo by [Dusk Audio.](https://github.com/dusk-audio/dusk-audio-plugins) This open source 3-head tape echo and spring reverb engine is the final piece of the puzzle in Follower, adding warm, lush width and dimension to its already huge post-metal tonality. This section of the plugin is easy to get lost in - be warned!  
 
 *Licensing notice: Tape Echo by Dusk Audio is released under the GPLv3 license, the same license that Follower is released under.*  
 
