@@ -1,4 +1,4 @@
-![Static Badge](https://img.shields.io/badge/Version-1.00-white) 
+![Static Badge](https://img.shields.io/badge/Version-1.01-white) 
 # Follower
 <p align="center">
    <img width="656" height="131" alt="FollowerLogo" src="https://github.com/user-attachments/assets/0b0b14ee-461a-44bb-9a54-a3c3c9762ec4" />  
@@ -92,7 +92,11 @@ On macOS, this would be: `~/Library/Audio/Plug-Ins/VST3/`
 
 - *Note that Logic Pro and GarageBand only load Audio Units, so they won't see the VST3*
 
-## Changelog
+## Changelog  
+FOLLOWER V1.01 (November 24, 2026)
+-Improved graphics rendering  
+-Fixed drawer toggle LED states  
+
 FOLLOWER V1.00 (November 24, 2026)  
 -Released
 
