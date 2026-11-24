@@ -100,14 +100,16 @@ void FollowerLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int
 
     const float knobRadius = radius - 2.5f;
 
-    // 1. Directional drop shadow onto the white faceplate (Meadow-style depth)
+    // 1. Directional drop shadow onto the white faceplate (fast radial gradient, zero offscreen blur)
     {
-        juce::DropShadow shadow (FollowerPalette::inkBlack.withAlpha (0.28f),
-                                 static_cast<int> (knobRadius * 0.26f),
-                                 { 0, static_cast<int> (knobRadius * 0.14f) });
-        juce::Path shadowCircle;
-        shadowCircle.addEllipse (centre.x - knobRadius, centre.y - knobRadius, knobRadius * 2.0f, knobRadius * 2.0f);
-        shadow.drawForPath (g, shadowCircle);
+        const float shadowR = knobRadius * 1.16f;
+        const float shadowY = centre.y + knobRadius * 0.14f;
+        juce::ColourGradient shadowGrad (FollowerPalette::inkBlack.withAlpha (0.26f), centre.x, shadowY,
+                                         FollowerPalette::inkBlack.withAlpha (0.0f),  centre.x + shadowR, shadowY,
+                                         true);
+        shadowGrad.addColour (0.72, FollowerPalette::inkBlack.withAlpha (0.14f));
+        g.setGradientFill (shadowGrad);
+        g.fillEllipse (centre.x - shadowR, shadowY - shadowR, shadowR * 2.0f, shadowR * 2.0f);
     }
 
     // 2. Classic Fluted / Knurled Guitar Amplifier Skirt (satin silver-gray metallic ring)
@@ -314,6 +316,7 @@ FollowerKnob::FollowerKnob (juce::AudioProcessorValueTreeState& apvts,
     slider.setColour (juce::Slider::rotarySliderFillColourId, accent);
     slider.setMouseDragSensitivity (170);
     slider.onValueChange = [this] { updateValueText(); };
+    setBufferedToImage (true);
     addAndMakeVisible (slider);
 
     nameLabel.setText (labelText, juce::dontSendNotification);
@@ -521,7 +524,7 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
         addAndMakeVisible (k);
 
     syncVisibilityAndDimensions (true);
-    startTimerHz (60); // 60 Hz for silky-smooth drawer gliding & jewel telemetry
+    startTimerHz (30); // Reduced from 60Hz to 30Hz for better performance
 }
 
 FollowerAudioProcessorEditor::~FollowerAudioProcessorEditor()
@@ -632,8 +635,8 @@ void FollowerAudioProcessorEditor::timerCallback()
     const int   ampChoice   = static_cast<int> (audioProcessor.apvts.getRawParameterValue ("ampSelect")->load());
     const bool  gateFast    = audioProcessor.apvts.getRawParameterValue ("gateFast")->load() > 0.5f;
 
-    // Smooth exponential ease for drawer gliding (~180ms settle time at 60Hz)
-    constexpr float glideSpeed = 0.24f;
+    // Smooth exponential ease for drawer gliding (~180ms settle time at 30Hz)
+    constexpr float glideSpeed = 0.42f; // Increased from 0.24f 60Hz speed
     bool animating = false;
 
     auto stepGlide = [&] (float& current, float target)
@@ -658,20 +661,37 @@ void FollowerAudioProcessorEditor::timerCallback()
     if (animating || ampChoice != lastAmpChoice || gateFast != lastGateFastState)
         syncVisibilityAndDimensions (false);
 
-    // Sync header pill active LED border/dot with circuit bypass states
-    const bool odActive   = audioProcessor.apvts.getRawParameterValue ("odOn")->load() > 0.5f;
-    const bool preActive  = (audioProcessor.apvts.getRawParameterValue ("tremOn")->load() > 0.5f)
-                         || (audioProcessor.apvts.getRawParameterValue ("delayOn")->load() > 0.5f)
-                         || (audioProcessor.apvts.getRawParameterValue ("revOn")->load() > 0.5f);
-    const bool tapeActive = audioProcessor.apvts.getRawParameterValue ("tapeOn")->load() > 0.5f;
+    // Sync header pill active LED border/dot with circuit bypass states (only repaint if changed)
+    auto updatePillLed = [] (juce::ToggleButton& btn, bool active)
+    {
+        const bool prev = static_cast<bool> (btn.getProperties().getWithDefault ("circuitActive", false));
+        if (prev != active)
+        {
+            btn.getProperties().set ("circuitActive", active);
+            btn.repaint();
+        }
+    };
 
-    showOdBtn.getProperties().set ("circuitActive", odActive);
-    showPreFxBtn.getProperties().set ("circuitActive", preActive);
-    showTapeBtn.getProperties().set ("circuitActive", tapeActive);
+    updatePillLed (showOdBtn,    audioProcessor.apvts.getRawParameterValue ("odOn")->load() > 0.5f);
+    updatePillLed (showPreFxBtn, (audioProcessor.apvts.getRawParameterValue ("tremOn")->load() > 0.5f)
+                              || (audioProcessor.apvts.getRawParameterValue ("delayOn")->load() > 0.5f)
+                              || (audioProcessor.apvts.getRawParameterValue ("revOn")->load() > 0.5f));
+    updatePillLed (showTapeBtn,  audioProcessor.apvts.getRawParameterValue ("tapeOn")->load() > 0.5f);
 
+    // Only repaint the small top-right jewel indicator rectangle when glow changes
     const float rawJewel = audioProcessor.jewelDriveActivity.load();
-    smoothJewelGlow = (rawJewel > smoothJewelGlow) ? rawJewel : (smoothJewelGlow * 0.82f + rawJewel * 0.18f);
-    repaint();
+    const float nextGlow = (rawJewel > smoothJewelGlow) ? rawJewel : (smoothJewelGlow * 0.82f + rawJewel * 0.18f);
+
+    if (std::abs (nextGlow - smoothJewelGlow) > 0.003f)
+    {
+        smoothJewelGlow = nextGlow;
+        repaint (getWidth() - 72, 6, 66, 66);
+    }
+    else if (smoothJewelGlow != 0.0f && nextGlow <= 0.003f)
+    {
+        smoothJewelGlow = 0.0f;
+        repaint (getWidth() - 72, 6, 66, 66);
+    }
 }
 
 void FollowerAudioProcessorEditor::resized()
