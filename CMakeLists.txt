@@ -53,13 +53,27 @@ target_sources(Follower
         Source/Dsp/TrainerMarkIII.h
         Source/Dsp/Rocker100.h
         Source/Dsp/DuskTapeEcho.h
+        Source/StandaloneApp.cpp
 )
+
+set(ASIO_SDK_DIR "" CACHE PATH "Path to Steinberg ASIO SDK root directory")
+
+if(WIN32 AND EXISTS "C:/Users/alank/Downloads/ASIO-SDK_2.3.4_2025-10-15/ASIOSDK/common/iasiodrv.h")
+    target_include_directories(Follower PUBLIC
+        "${ASIO_SDK_DIR}/common"
+        "${ASIO_SDK_DIR}/host"
+        "${ASIO_SDK_DIR}/host/pc"
+    )
+    target_compile_definitions(Follower PUBLIC JUCE_ASIO=1)
+    message(STATUS "ASIO SDK enabled from: C:/Users/alank/Downloads/ASIO-SDK_2.3.4_2025-10-15/ASIOSDK")
+endif()
 
 target_compile_definitions(Follower
     PUBLIC
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
 )
 
 target_link_libraries(Follower
@@ -67,6 +81,7 @@ target_link_libraries(Follower
         FollowerAssets
         juce::juce_audio_utils
         juce::juce_dsp
+        juce::juce_audio_plugin_client
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
