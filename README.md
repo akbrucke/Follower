@@ -3,7 +3,7 @@
 <p align="center">
    <img width="656" height="131" alt="FollowerLogo" src="https://github.com/user-attachments/assets/0b0b14ee-461a-44bb-9a54-a3c3c9762ec4" />  
 </p>
-VST3 component-modeled post-metal amp sim suite made with LiveSPICE using JUCE Framework, vibe-coded and then refined with a human touch   
+VST3 component-modeled post-metal amp sim suite using JUCE Framework, vibe-coded and then refined with a human touch   
 
 ## Overview & Design Philosophy
 Follower is a complete guitar amplifier and effects workstation engineered to recreate the monolithic, atmospheric guitar tones of Cult of Luna's landmark album Salvation. Rather than isolating a single amplifier in a sterile studio chain, Follower models the entire signal path: Boutique op-amp overdrive and pre-amplifier modulation, delay, and reverb straight into two switchable, volume-matched 100-watt tube heads, four cabinet IRs provided by **Deathblossom Audio**, and a true stereo post-cabinet implementation of Dusk Audio's Tape Echo.  
@@ -19,7 +19,7 @@ Even without these mods, this rare overdrive is special when combined with the a
 Also in front of the amp (in true post-metal fashion) are three time-based effects: **Tremolo**, **Analog Delay**, and **Hall Reverb**. Using these effects before the amps on high gain settings creates huge swells of lo-fi ambience, and using them in front of the amps set clean creates beautiful and delicate tones that feel amazing to play.  
 
 ### Amps
-Two 100-watt amps, component-modeled with LiveSPICE. Every control works just as it would on the real amps. 
+Two component-modeled 100-watt amps. Every control works just as it would on the real amps. 
 
 Amp 1: **Trainer Mark III** - a Canadian-made all-tube circuit offering loud, punchy cleans with a full midrange, and wonderful breakup when pushed with the overdrive pedal. It features a Treble Boost switch that compliments the tone perfectly.  
 
