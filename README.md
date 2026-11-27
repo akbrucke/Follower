@@ -1,4 +1,4 @@
-![Static Badge](https://img.shields.io/badge/Version-1.1.0-white) 
+![GitHub Release](https://img.shields.io/github/v/release/akbrucke/Follower?color=%23FFFFFF)
 # Follower
 <p align="center">
    <img width="656" height="131" alt="FollowerLogo" src="https://github.com/user-attachments/assets/0b0b14ee-461a-44bb-9a54-a3c3c9762ec4" />  
