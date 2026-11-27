@@ -46,6 +46,8 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
     std::atomic<float> jewelDriveActivity { 0.0f };
+    std::atomic<float> inputPeakLevel  { 0.0f };
+    std::atomic<float> outputPeakLevel { 0.0f };
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

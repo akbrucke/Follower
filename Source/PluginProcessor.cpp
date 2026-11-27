@@ -19,6 +19,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FollowerAudioProcessor::crea
     p.push_back (std::make_unique<juce::AudioParameterBool> ("odVisible",    "Show Overdrive Drawer", true));
     p.push_back (std::make_unique<juce::AudioParameterBool> ("preFxVisible", "Show Pre-FX Drawer",    false));
     p.push_back (std::make_unique<juce::AudioParameterBool> ("tapeVisible",  "Show Tape Echo Drawer", false));
+    p.push_back (std::make_unique<juce::AudioParameterBool> ("utilityVisible",  "Show Utility Drawer", false));
 
     // Left Drawer: Overdrive (+ Fatness & Variable Voltage)
     p.push_back (std::make_unique<juce::AudioParameterBool>  ("odOn",      "Overdrive On", true));
@@ -233,6 +234,12 @@ void FollowerAudioProcessor::loadUserIrFile (const juce::File& file)
 
 void FollowerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
+    float inPeak = 0.0f;
+    const int numInCh = juce::jmin (getTotalNumInputChannels(), buffer.getNumChannels());
+    for (int ch = 0; ch < numInCh; ++ch)
+        inPeak = juce::jmax (inPeak, buffer.getMagnitude (ch, 0, buffer.getNumSamples()));
+    inputPeakLevel.store (inPeak, std::memory_order_relaxed);
+
     juce::ScopedNoDenormals noDenormals;
 
     const int numSamples  = buffer.getNumSamples();
@@ -403,6 +410,12 @@ void FollowerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     const float outDb = apvts.getRawParameterValue ("outLevel")->load();
     const float outGain = juce::Decibels::decibelsToGain (outDb);
     buffer.applyGain (outGain);
+
+    float outPeak = 0.0f;
+    const int numOutCh = juce::jmin (getTotalNumOutputChannels(), buffer.getNumChannels());
+    for (int ch = 0; ch < numOutCh; ++ch)
+        outPeak = juce::jmax (outPeak, buffer.getMagnitude (ch, 0, buffer.getNumSamples()));
+    outputPeakLevel.store (outPeak, std::memory_order_relaxed);
 }
 
 juce::AudioProcessorEditor* FollowerAudioProcessor::createEditor()

@@ -58,14 +58,24 @@ target_sources(Follower
 
 set(ASIO_SDK_DIR "" CACHE PATH "Path to Steinberg ASIO SDK root directory")
 
-if(WIN32 AND EXISTS "C:/Users/alank/Downloads/ASIO-SDK_2.3.4_2025-10-15/ASIOSDK/common/iasiodrv.h")
-    target_include_directories(Follower PUBLIC
-        "${ASIO_SDK_DIR}/common"
-        "${ASIO_SDK_DIR}/host"
-        "${ASIO_SDK_DIR}/host/pc"
-    )
-    target_compile_definitions(Follower PUBLIC JUCE_ASIO=1)
-    message(STATUS "ASIO SDK enabled from: C:/Users/alank/Downloads/ASIO-SDK_2.3.4_2025-10-15/ASIOSDK")
+if("${ASIO_SDK_DIR}" STREQUAL "" AND DEFINED ENV{ASIO_SDK_DIR})
+    file(TO_CMAKE_PATH "$ENV{ASIO_SDK_DIR}" _asio_env_path)
+    set(ASIO_SDK_DIR "${_asio_env_path}" CACHE PATH "Path to Steinberg ASIO SDK root directory" FORCE)
+endif()
+
+if(WIN32)
+    if(NOT "${ASIO_SDK_DIR}" STREQUAL "" AND EXISTS "${ASIO_SDK_DIR}/common/iasiodrv.h")
+        # Apply to Follower, Follower_Standalone, and any JUCE module targets built for them
+        include_directories(
+            "${ASIO_SDK_DIR}/common"
+            "${ASIO_SDK_DIR}/host"
+            "${ASIO_SDK_DIR}/host/pc"
+        )
+        add_compile_definitions(JUCE_ASIO=1)
+        message(STATUS "ASIO SDK enabled from: ${ASIO_SDK_DIR}")
+    else()
+        message(WARNING "ASIO SDK NOT found! Checked path: '${ASIO_SDK_DIR}/common/iasiodrv.h'")
+    endif()
 endif()
 
 target_compile_definitions(Follower

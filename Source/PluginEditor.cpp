@@ -429,13 +429,22 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
     setLookAndFeel (&followerLnf);
     buildSvgLogo();
 
+    audioSettingsBtn.setVisible (juce::JUCEApplicationBase::isStandaloneApp());
+    audioSettingsBtn.onClick = [this]
+    {
+        if (onAudioSettingsClicked)
+            onAudioSettingsClicked();
+    };
+
     // Header Drawer Toggles
     showOdAtt    = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "odVisible", showOdBtn);
     showPreFxAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "preFxVisible", showPreFxBtn);
     showTapeAtt  = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "tapeVisible", showTapeBtn);
+    showUtilityAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "utilityVisible", showUtilityBtn);
     addAndMakeVisible (showOdBtn);
     addAndMakeVisible (showPreFxBtn);
     addAndMakeVisible (showTapeBtn);
+    addAndMakeVisible (showUtilityBtn);
     lastOdActive   = p.apvts.getRawParameterValue ("odOn")->load() > 0.5f;
     lastPreActive  = (p.apvts.getRawParameterValue ("tremOn")->load() > 0.5f)
                   || (p.apvts.getRawParameterValue ("delayOn")->load() > 0.5f)
@@ -445,6 +454,15 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
     showOdBtn.getProperties().set ("circuitActive", lastOdActive);
     showPreFxBtn.getProperties().set ("circuitActive", lastPreActive);
     showTapeBtn.getProperties().set ("circuitActive", lastTapeActive);
+
+    // Audio button for standalone app
+    addChildComponent (audioSettingsBtn);
+    audioSettingsBtn.setVisible (juce::JUCEApplicationBase::isStandaloneApp());
+    audioSettingsBtn.onClick = [this]
+    {
+        if (onAudioSettingsClicked)
+            onAudioSettingsClicked();
+    };
 
     // Left Overdrive Drawer
     odOnAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "odOn", odOnBtn);
@@ -574,14 +592,17 @@ void FollowerAudioProcessorEditor::syncVisibilityAndDimensions (bool immediate)
     const float targetOd    = (audioProcessor.apvts.getRawParameterValue ("odVisible")->load() > 0.5f) ? 1.0f : 0.0f;
     const float targetPreFx = (audioProcessor.apvts.getRawParameterValue ("preFxVisible")->load() > 0.5f) ? 1.0f : 0.0f;
     const float targetTape  = (audioProcessor.apvts.getRawParameterValue ("tapeVisible")->load() > 0.5f) ? 1.0f : 0.0f;
+    auto*       utilParam   = audioProcessor.apvts.getRawParameterValue ("utilityVisible");
+    const float targetUtility = (utilParam != nullptr && utilParam->load() > 0.5f) ? 1.0f : 0.0f;
     const int   ampChoice   = static_cast<int> (audioProcessor.apvts.getRawParameterValue ("ampSelect")->load());
     const bool  gateFast    = audioProcessor.apvts.getRawParameterValue ("gateFast")->load() > 0.5f;
 
     if (immediate)
     {
-        odGlide    = targetOd;
-        preFxGlide = targetPreFx;
-        tapeGlide  = targetTape;
+        odGlide      = targetOd;
+        preFxGlide   = targetPreFx;
+        tapeGlide    = targetTape;
+        utilityGlide = targetUtility;
     }
 
     lastAmpChoice     = ampChoice;
@@ -626,7 +647,7 @@ void FollowerAudioProcessorEditor::syncVisibilityAndDimensions (bool immediate)
         k->setVisible (showTapeControls);
 
     const int width  = 648 + juce::roundToInt (odGlide * 226.0f) + juce::roundToInt (tapeGlide * 266.0f);
-    const int height = 402 + juce::roundToInt (preFxGlide * 142.0f);
+    const int height = 402 + juce::roundToInt (preFxGlide * 142.0f) + juce::roundToInt (utilityGlide * 48.0f);
 
     if (getWidth() != width || getHeight() != height)
         setSize (width, height);
@@ -643,6 +664,8 @@ void FollowerAudioProcessorEditor::timerCallback()
     const float targetTape  = (audioProcessor.apvts.getRawParameterValue ("tapeVisible")->load() > 0.5f) ? 1.0f : 0.0f;
     const int   ampChoice   = static_cast<int> (audioProcessor.apvts.getRawParameterValue ("ampSelect")->load());
     const bool  gateFast    = audioProcessor.apvts.getRawParameterValue ("gateFast")->load() > 0.5f;
+    auto* utilParam = audioProcessor.apvts.getRawParameterValue ("utilityVisible");
+    const float targetUtility = (utilParam != nullptr && utilParam->load() > 0.5f) ? 1.0f : 0.0f;
 
     // Smooth exponential ease for drawer gliding (~180ms settle time at 30Hz)
     constexpr float glideSpeed = 0.42f; // Increased from 0.24f 60Hz speed
@@ -666,6 +689,7 @@ void FollowerAudioProcessorEditor::timerCallback()
     stepGlide (odGlide,    targetOd);
     stepGlide (preFxGlide, targetPreFx);
     stepGlide (tapeGlide,  targetTape);
+    stepGlide (utilityGlide,  targetUtility);
 
     if (animating || ampChoice != lastAmpChoice || gateFast != lastGateFastState)
         syncVisibilityAndDimensions (false);
@@ -697,6 +721,34 @@ void FollowerAudioProcessorEditor::timerCallback()
         showTapeBtn.getProperties().set ("circuitActive", tapeActive);
         showTapeBtn.repaint();
     }
+
+    if (utilityGlide > 0.15f)
+    {
+        auto updateMeter = [] (float raw, float& smooth, float& hold, int& holdFrames)
+        {
+            smooth = (raw > smooth) ? raw : (smooth * 0.80f);
+            if (raw >= hold)
+            {
+                hold = raw;
+                holdFrames = 24; // ~0.8s peak hold at 30 Hz
+            }
+            else if (holdFrames > 0)
+            {
+                --holdFrames;
+            }
+            else
+            {
+                hold *= 0.88f;
+            }
+        };
+
+        updateMeter (audioProcessor.inputPeakLevel.load (std::memory_order_relaxed),
+                    smoothInPeak, holdInPeak, inHoldFrames);
+        updateMeter (audioProcessor.outputPeakLevel.load (std::memory_order_relaxed),
+                    smoothOutPeak, holdOutPeak, outHoldFrames);
+
+        repaint (utilityPanelBounds);
+    }
 }
 
 void FollowerAudioProcessorEditor::resized()
@@ -709,7 +761,22 @@ void FollowerAudioProcessorEditor::resized()
     showTapeBtn.setBounds  (header.removeFromRight (94).reduced (2, 9));
     showPreFxBtn.setBounds (header.removeFromRight (80).reduced (2, 9));
     showOdBtn.setBounds    (header.removeFromRight (98).reduced (2, 9));
+    showUtilityBtn.setBounds (header.removeFromRight (78).reduced (2, 9));
     bounds.removeFromTop (8);
+    if (utilityGlide > 0.02f)
+    {
+        const int utilH = juce::roundToInt (40.0f * utilityGlide);
+        utilityPanelBounds = bounds.removeFromTop (utilH);
+        bounds.removeFromTop (juce::roundToInt (8.0f * utilityGlide));
+
+        if (audioSettingsBtn.isVisible())
+            audioSettingsBtn.setBounds (utilityPanelBounds.withSizeKeepingCentre (74, 24));
+    }
+    else
+    {
+        utilityPanelBounds = {};
+        audioSettingsBtn.setBounds ({});
+    }
 
     // Bottom Collapsible Drawer: Pre-Amp Time-Based Effects (glides vertically)
     if (preFxGlide > 0.02f)
@@ -958,15 +1025,25 @@ void FollowerAudioProcessorEditor::paint (juce::Graphics& g)
     auto header = getLocalBounds().reduced (14).removeFromTop (46).toFloat();
     drawSvgHeaderLogo (g, header.removeFromLeft (192.0f));
 
-    g.setColour (FollowerPalette::slateMuted);
-    g.setFont (FollowerLookAndFeel::getInterFont (10.0f, true));
-    g.drawText ("DUAL-AMP PRE & POST TIME-BASED RIG",
-                header.withTrimmedLeft (28.0f).withRight (header.getRight() - 315.0f),
-                juce::Justification::centredLeft);
+    // Only draw subtitle when the full text fits cleanly before the leftmost pill button
+    {
+        const juce::String subtitleText = "DUAL-AMP PRE & POST TIME-BASED RIG";
+        const auto subtitleFont = FollowerLookAndFeel::getInterFont (10.0f, true);
+        const float rightLimit  = static_cast<float> (showUtilityBtn.getX()) - 12.0f;
+        const auto subtitleArea = header.withTrimmedLeft (28.0f).withRight (rightLimit);
+        const float textWidth   = juce::GlyphArrangement::getStringWidth (subtitleFont, subtitleText);
+
+        if (subtitleArea.getWidth() >= textWidth + 2.0f)
+        {
+            g.setColour (FollowerPalette::slateMuted);
+            g.setFont (subtitleFont);
+            g.drawText (subtitleText, subtitleArea, juce::Justification::centredLeft, false);
+        }
+    }
 
     drawBlueJewelIndicator (g, header.removeFromRight (30.0f));
 
-    // Hairline divider under header (Meadow signature)
+    // Hairline divider under header
     g.setColour (FollowerPalette::inkBlack.withAlpha (0.14f));
     g.drawLine (16.0f, 62.0f, static_cast<float> (getWidth()) - 16.0f, 62.0f, 1.0f);
 
@@ -998,6 +1075,60 @@ void FollowerAudioProcessorEditor::paint (juce::Graphics& g)
     drawCard (cabPanelBounds,   {}, 1.0f);
     drawCard (preFxPanelBounds, "PRE-AMP TIME-BASED EFFECTS", preFxGlide);
     drawCard (tapePanelBounds,  "DUSK AUDIO TAPE ECHO", tapeGlide);
+
+    // Utility panel sub-header
+    if (! utilityPanelBounds.isEmpty() && utilityGlide > 0.02f)
+    {
+        drawCard (utilityPanelBounds, {}, utilityGlide);
+
+        if (utilityGlide > 0.35f)
+        {
+            auto uInner = utilityPanelBounds.reduced (12, 8).toFloat();
+            const float meterW = 175.0f;
+
+            auto drawHorizontalMeter = [&] (juce::Rectangle<float> area, const juce::String& label,
+                                            float linearPeak, float linearHold)
+            {
+                const float db     = juce::Decibels::gainToDecibels (linearPeak, -60.0f);
+                const float holdDb = juce::Decibels::gainToDecibels (linearHold, -60.0f);
+                const float norm   = juce::jlimit (0.0f, 1.0f, (db + 60.0f) / 66.0f);     // -60 dB to +6 dB
+                const float holdN  = juce::jlimit (0.0f, 1.0f, (holdDb + 60.0f) / 66.0f);
+                const bool  clip   = (db > -0.1f);
+
+                g.setColour (FollowerPalette::slateMuted.withAlpha (utilityGlide));
+                g.setFont (FollowerLookAndFeel::getInterFont (9.5f, true));
+                g.drawText (label, area.removeFromLeft (34.0f), juce::Justification::centredLeft);
+
+                const juce::String dbStr = (db <= -59.5f) ? "-inf" : juce::String (db, 1) + " dB";
+                g.setColour ((clip ? juce::Colour (0xFFE53935) : FollowerPalette::inkBlack).withAlpha (utilityGlide));
+                g.drawText (dbStr, area.removeFromRight (48.0f), juce::Justification::centredRight);
+
+                auto track = area.reduced (4.0f, 6.0f);
+                g.setColour (FollowerPalette::panelRecessed.withAlpha (utilityGlide));
+                g.fillRoundedRectangle (track, 3.0f);
+
+                if (norm > 0.005f)
+                {
+                    auto fill = track.withWidth (track.getWidth() * norm);
+                    g.setColour ((clip ? juce::Colour (0xFFE53935) : FollowerPalette::ledBlue).withAlpha (utilityGlide));
+                    g.fillRoundedRectangle (fill, 3.0f);
+                }
+
+                if (holdN > 0.01f)
+                {
+                    const float hx = track.getX() + track.getWidth() * holdN;
+                    g.setColour (FollowerPalette::inkBlack.withAlpha (0.75f * utilityGlide));
+                    g.drawLine (hx, track.getY(), hx, track.getBottom(), 1.5f);
+                }
+
+                g.setColour (FollowerPalette::borderHairline.withAlpha (utilityGlide));
+                g.drawRoundedRectangle (track, 3.0f, 1.0f);
+            };
+
+            drawHorizontalMeter (uInner.removeFromLeft (meterW),  "IN",  smoothInPeak,  holdInPeak);
+            drawHorizontalMeter (uInner.removeFromRight (meterW), "OUT", smoothOutPeak, holdOutPeak);
+        }
+    }
 
     // Cabinet & Filter sub-headers
     if (! cabPanelBounds.isEmpty())

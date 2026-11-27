@@ -4,6 +4,7 @@
 #include <juce_audio_plugin_client/juce_audio_plugin_client.h>
 #include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>
 #include "PluginProcessor.h"
+#include "PluginEditor.h"
 
 class FollowerStandaloneWindow : public juce::StandaloneFilterWindow
 {
@@ -14,19 +15,12 @@ public:
                               bool takeOwnershipOfSettings)
         : StandaloneFilterWindow (title, backgroundColour, settingsToUse, takeOwnershipOfSettings)
     {
-        // Locate the Options button in the standalone header bar and rewire it
-        // to open our mono-capable AudioDeviceSelectorComponent
-        for (int i = 0; i < getNumChildComponents(); ++i)
+        juce::MessageManager::callAsync ([this]
         {
-            if (auto* btn = dynamic_cast<juce::Button*> (getChildComponent (i)))
-            {
-                if (btn->getButtonText().containsIgnoreCase ("Options"))
-                {
-                    btn->onClick = [this] { showMonoCapableAudioSettings(); };
-                    break;
-                }
-            }
-        }
+            if (auto* holder = getPluginHolder())
+                if (auto* ed = dynamic_cast<FollowerAudioProcessorEditor*> (holder->processor->getActiveEditor()))
+                    ed->onAudioSettingsClicked = [this] { showMonoCapableAudioSettings(); };
+        });
     }
 
     void showMonoCapableAudioSettings()
@@ -37,23 +31,14 @@ public:
 
         juce::DialogWindow::LaunchOptions o;
 
-        int maxNumInputs = 0, maxNumOutputs = 0;
-        if (auto* processor = holder->processor.get())
-        {
-            maxNumInputs  = processor->getTotalNumInputChannels();
-            maxNumOutputs = processor->getTotalNumOutputChannels();
-        }
-
-        // Passing false for showChannelsAsStereoPairs exposes individual mono input
-        // checkboxes (e.g., Input 1, Input 2) in the ASIO device settings
         auto* selector = new juce::AudioDeviceSelectorComponent (
             holder->deviceManager,
-            0, juce::jmax (1, maxNumInputs),
-            0, juce::jmax (2, maxNumOutputs),
-            false, // showMidiInputOptions
-            false, // showMidiOutputSelector
-            false, // showChannelsAsStereoPairs -> FALSE for individual mono inputs!
-            false  // hideAdvancedOptionsWithButton
+            0, 1,   // min/max input channels (1 = mono ASIO selection)
+            0, 2,   // min/max output channels
+            false,  // showMidiInputOptions
+            false,  // showMidiOutputSelector
+            false,  // showChannelsAsStereoPairs -> false for individual mono inputs
+            false   // hideAdvancedOptionsWithButton
         );
 
         selector->setSize (500, 450);
