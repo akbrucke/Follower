@@ -39,8 +39,8 @@ After the cabinet, in true stereo, lives an implementation of the incredible **T
 Lastly, Follower includes an effective noise gate, with a toggle for fast or slow release, and high-pass/low-pass filters, for getting mix-ready tones.  
 
 ## Screenshots  
-<img width="1142" height="604" alt="Screenshot 2026-11-24 052315" src="https://github.com/user-attachments/assets/9eef0400-bbce-4d09-8357-da5a9f7b441c" />
 
+<img width="1142" height="604" alt="FollowerV1 1 0" src="https://github.com/user-attachments/assets/1c457334-4fcc-4c53-beee-ec4b2bd8a029" />
 
 ## Installation
 Currently, Follower is released for Windows 10/11 only, but Mac and Linux releases are coming soon. To grab the latest prebuilt release, head to the [releases page.](https://github.com/akbrucke/Follower/releases) A collection of presets is included with the installer.
