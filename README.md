@@ -43,7 +43,7 @@ Lastly, Follower includes an effective noise gate, with a toggle for fast or slo
 
 
 ## Installation
-Currently, Follower is released for Windows 10/11 only, but Mac and Linux releases are coming soon. To grab the latest prebuilt release, head to the [releases page.](https://github.com/akbrucke/Follower/releases) Included with the release download is a thorough user manual, a collection of presets, and installation instructions.
+Currently, Follower is released for Windows 10/11 only, but Mac and Linux releases are coming soon. To grab the latest prebuilt release, head to the [releases page.](https://github.com/akbrucke/Follower/releases) A collection of presets is included with the installer.
 
 ## Building from Source (Windows)
 
