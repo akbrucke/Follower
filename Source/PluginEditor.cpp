@@ -441,6 +441,7 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
     showPreFxAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "preFxVisible", showPreFxBtn);
     showTapeAtt  = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "tapeVisible", showTapeBtn);
     showUtilityAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "utilityVisible", showUtilityBtn);
+    tunerMuteAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "tunerMute", tunerMuteBtn);
     addAndMakeVisible (showOdBtn);
     addAndMakeVisible (showPreFxBtn);
     addAndMakeVisible (showTapeBtn);
@@ -463,6 +464,9 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
         if (onAudioSettingsClicked)
             onAudioSettingsClicked();
     };
+
+    // Tuner mute button
+    addChildComponent (tunerMuteBtn);
 
     // Left Overdrive Drawer
     odOnAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "odOn", odOnBtn);
@@ -730,7 +734,7 @@ void FollowerAudioProcessorEditor::timerCallback()
             if (raw >= hold)
             {
                 hold = raw;
-                holdFrames = 24; // ~0.8s peak hold at 30 Hz
+                holdFrames = 24;
             }
             else if (holdFrames > 0)
             {
@@ -746,6 +750,22 @@ void FollowerAudioProcessorEditor::timerCallback()
                     smoothInPeak, holdInPeak, inHoldFrames);
         updateMeter (audioProcessor.outputPeakLevel.load (std::memory_order_relaxed),
                     smoothOutPeak, holdOutPeak, outHoldFrames);
+
+        auto reading = audioProcessor.tuner.computePitch();
+        if (reading.valid)
+        {
+            currentTunerReading = reading;
+            smoothCents += (reading.cents - smoothCents) * 0.35f;
+            tunerHoldFrames = 12;
+        }
+        else if (tunerHoldFrames > 0)
+        {
+            --tunerHoldFrames;
+        }
+        else
+        {
+            currentTunerReading.valid = false;
+        }
 
         repaint (utilityPanelBounds);
     }
@@ -769,13 +789,22 @@ void FollowerAudioProcessorEditor::resized()
         utilityPanelBounds = bounds.removeFromTop (utilH);
         bounds.removeFromTop (juce::roundToInt (8.0f * utilityGlide));
 
-        if (audioSettingsBtn.isVisible())
-            audioSettingsBtn.setBounds (utilityPanelBounds.withSizeKeepingCentre (74, 24));
+        auto centerRow = utilityPanelBounds.reduced (196, 8);
+        tunerMuteBtn.setVisible (utilityGlide > 0.35f);
+        tunerMuteBtn.setBounds (centerRow.removeFromRight (52));
+
+        if (juce::JUCEApplicationBase::isStandaloneApp())
+        {
+            centerRow.removeFromRight (6);
+            audioSettingsBtn.setVisible (utilityGlide > 0.35f);
+            audioSettingsBtn.setBounds (centerRow.removeFromRight (58));
+        }
     }
     else
     {
         utilityPanelBounds = {};
-        audioSettingsBtn.setBounds ({});
+        tunerMuteBtn.setVisible (false);
+        audioSettingsBtn.setVisible (false);
     }
 
     // Bottom Collapsible Drawer: Pre-Amp Time-Based Effects (glides vertically)
@@ -1077,57 +1106,87 @@ void FollowerAudioProcessorEditor::paint (juce::Graphics& g)
     drawCard (tapePanelBounds,  "DUSK AUDIO TAPE ECHO", tapeGlide);
 
     // Utility panel sub-header
-    if (! utilityPanelBounds.isEmpty() && utilityGlide > 0.02f)
+    if (utilityGlide > 0.35f)
     {
-        drawCard (utilityPanelBounds, {}, utilityGlide);
+        auto uInner = utilityPanelBounds.reduced (12, 8).toFloat();
+        const float meterW = 175.0f;
 
-        if (utilityGlide > 0.35f)
+        auto drawHorizontalMeter = [&] (juce::Rectangle<float> area, const juce::String& label,
+                                        float linearPeak, float linearHold)
         {
-            auto uInner = utilityPanelBounds.reduced (12, 8).toFloat();
-            const float meterW = 175.0f;
+            const float db     = juce::Decibels::gainToDecibels (linearPeak, -60.0f);
+            const float holdDb = juce::Decibels::gainToDecibels (linearHold, -60.0f);
+            const float norm   = juce::jlimit (0.0f, 1.0f, (db + 60.0f) / 66.0f);
+            const float holdN  = juce::jlimit (0.0f, 1.0f, (holdDb + 60.0f) / 66.0f);
+            const bool  clip   = (db > -0.1f);
 
-            auto drawHorizontalMeter = [&] (juce::Rectangle<float> area, const juce::String& label,
-                                            float linearPeak, float linearHold)
+            g.setColour (FollowerPalette::slateMuted.withAlpha (utilityGlide));
+            g.setFont (FollowerLookAndFeel::getInterFont (9.5f, true));
+            g.drawText (label, area.removeFromLeft (34.0f), juce::Justification::centredLeft);
+
+            const juce::String dbStr = (db <= -59.5f) ? "-inf" : juce::String (db, 1) + " dB";
+            g.setColour ((clip ? juce::Colour (0xFFE53935) : FollowerPalette::inkBlack).withAlpha (utilityGlide));
+            g.drawText (dbStr, area.removeFromRight (48.0f), juce::Justification::centredRight);
+
+            auto track = area.reduced (4.0f, 6.0f);
+            g.setColour (FollowerPalette::panelRecessed.withAlpha (utilityGlide));
+            g.fillRoundedRectangle (track, 3.0f);
+
+            if (norm > 0.005f)
             {
-                const float db     = juce::Decibels::gainToDecibels (linearPeak, -60.0f);
-                const float holdDb = juce::Decibels::gainToDecibels (linearHold, -60.0f);
-                const float norm   = juce::jlimit (0.0f, 1.0f, (db + 60.0f) / 66.0f);     // -60 dB to +6 dB
-                const float holdN  = juce::jlimit (0.0f, 1.0f, (holdDb + 60.0f) / 66.0f);
-                const bool  clip   = (db > -0.1f);
+                auto fill = track.withWidth (track.getWidth() * norm);
+                g.setColour ((clip ? juce::Colour (0xFFE53935) : FollowerPalette::ledBlue).withAlpha (utilityGlide));
+                g.fillRoundedRectangle (fill, 3.0f);
+            }
 
-                g.setColour (FollowerPalette::slateMuted.withAlpha (utilityGlide));
-                g.setFont (FollowerLookAndFeel::getInterFont (9.5f, true));
-                g.drawText (label, area.removeFromLeft (34.0f), juce::Justification::centredLeft);
+            if (holdN > 0.01f)
+            {
+                const float hx = track.getX() + track.getWidth() * holdN;
+                g.setColour (FollowerPalette::inkBlack.withAlpha (0.75f * utilityGlide));
+                g.drawLine (hx, track.getY(), hx, track.getBottom(), 1.5f);
+            }
 
-                const juce::String dbStr = (db <= -59.5f) ? "-inf" : juce::String (db, 1) + " dB";
-                g.setColour ((clip ? juce::Colour (0xFFE53935) : FollowerPalette::inkBlack).withAlpha (utilityGlide));
-                g.drawText (dbStr, area.removeFromRight (48.0f), juce::Justification::centredRight);
+            g.setColour (FollowerPalette::borderHairline.withAlpha (utilityGlide));
+            g.drawRoundedRectangle (track, 3.0f, 1.0f);
+        };
 
-                auto track = area.reduced (4.0f, 6.0f);
-                g.setColour (FollowerPalette::panelRecessed.withAlpha (utilityGlide));
-                g.fillRoundedRectangle (track, 3.0f);
+        drawHorizontalMeter (uInner.removeFromLeft (meterW),  "IN",  smoothInPeak,  holdInPeak);
+        drawHorizontalMeter (uInner.removeFromRight (meterW), "OUT", smoothOutPeak, holdOutPeak);
 
-                if (norm > 0.005f)
-                {
-                    auto fill = track.withWidth (track.getWidth() * norm);
-                    g.setColour ((clip ? juce::Colour (0xFFE53935) : FollowerPalette::ledBlue).withAlpha (utilityGlide));
-                    g.fillRoundedRectangle (fill, 3.0f);
-                }
+        // Chromatic Tuner in the remaining center space
+        auto tunerArea = uInner;
+        tunerArea.removeFromLeft (8.0f);
+        tunerArea.removeFromRight (juce::JUCEApplicationBase::isStandaloneApp() ? 124.0f : 62.0f);
 
-                if (holdN > 0.01f)
-                {
-                    const float hx = track.getX() + track.getWidth() * holdN;
-                    g.setColour (FollowerPalette::inkBlack.withAlpha (0.75f * utilityGlide));
-                    g.drawLine (hx, track.getY(), hx, track.getBottom(), 1.5f);
-                }
+        auto noteBox = tunerArea.removeFromLeft (44.0f);
+        const bool inTune = currentTunerReading.valid && std::abs (smoothCents) <= 3.0f;
 
-                g.setColour (FollowerPalette::borderHairline.withAlpha (utilityGlide));
-                g.drawRoundedRectangle (track, 3.0f, 1.0f);
-            };
+        g.setColour ((inTune ? FollowerPalette::ledBlue : FollowerPalette::inkBlack).withAlpha (utilityGlide));
+        g.setFont (FollowerLookAndFeel::getInterFont (14.0f, true));
+        g.drawText (currentTunerReading.valid ? currentTunerReading.noteName : "--",
+                    noteBox, juce::Justification::centred);
 
-            drawHorizontalMeter (uInner.removeFromLeft (meterW),  "IN",  smoothInPeak,  holdInPeak);
-            drawHorizontalMeter (uInner.removeFromRight (meterW), "OUT", smoothOutPeak, holdOutPeak);
+        auto centsTrack = tunerArea.reduced (4.0f, 6.0f);
+        g.setColour (FollowerPalette::panelRecessed.withAlpha (utilityGlide));
+        g.fillRoundedRectangle (centsTrack, 3.0f);
+
+        const float centerX = centsTrack.getCentreX();
+        g.setColour (FollowerPalette::inkBlack.withAlpha (0.35f * utilityGlide));
+        g.drawLine (centerX, centsTrack.getY() + 1.0f, centerX, centsTrack.getBottom() - 1.0f, 1.5f);
+
+        if (currentTunerReading.valid)
+        {
+            const float normOffset = juce::jlimit (-1.0f, 1.0f, smoothCents / 50.0f);
+            const float indicatorX = centerX + normOffset * (centsTrack.getWidth() * 0.46f);
+            auto pillRect = juce::Rectangle<float> (10.0f, centsTrack.getHeight() - 2.0f)
+                                .withCentre ({ indicatorX, centsTrack.getCentreY() });
+
+            g.setColour ((inTune ? FollowerPalette::ledBlue : FollowerPalette::inkBlack).withAlpha (utilityGlide));
+            g.fillRoundedRectangle (pillRect, 2.5f);
         }
+
+        g.setColour (FollowerPalette::borderHairline.withAlpha (utilityGlide));
+        g.drawRoundedRectangle (centsTrack, 3.0f, 1.0f);
     }
 
     // Cabinet & Filter sub-headers

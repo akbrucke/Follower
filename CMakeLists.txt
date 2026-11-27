@@ -53,6 +53,7 @@ target_sources(Follower
         Source/Dsp/TrainerMarkIII.h
         Source/Dsp/Rocker100.h
         Source/Dsp/DuskTapeEcho.h
+        Source/Dsp/ChromaticTuner.h
         Source/StandaloneApp.cpp
 )
 

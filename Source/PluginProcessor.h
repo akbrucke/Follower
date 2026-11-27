@@ -2,13 +2,12 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
-#include <atomic>
-
 #include "Dsp/Overdrive.h"
 #include "Dsp/PreAmpEffects.h"
 #include "Dsp/TrainerMarkIII.h"
 #include "Dsp/Rocker100.h"
 #include "Dsp/DuskTapeEcho.h"
+#include "Dsp/ChromaticTuner.h"
 
 class FollowerAudioProcessor : public juce::AudioProcessor
 {
@@ -48,6 +47,7 @@ public:
     std::atomic<float> jewelDriveActivity { 0.0f };
     std::atomic<float> inputPeakLevel  { 0.0f };
     std::atomic<float> outputPeakLevel { 0.0f };
+    ChromaticTuner tuner;
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

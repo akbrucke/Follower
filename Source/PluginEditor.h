@@ -90,6 +90,10 @@ private:
     // Audio button for standalone app
     juce::TextButton audioSettingsBtn { "AUDIO" };
 
+    // Mute button for tuner
+    juce::ToggleButton tunerMuteBtn { "MUTE" };
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> tunerMuteAtt;
+
     // Left Collapsible Drawer: Overdrive (+ Fatness & Voltage)
     juce::ToggleButton odOnBtn { "PEDAL ON" };
     FollowerKnob odGainKnob, odToneKnob, odLevelKnob, odFatnessKnob, odVoltageKnob;
@@ -162,6 +166,10 @@ private:
     bool  lastPreActive     = false;
     bool  lastTapeActive    = false;
     float smoothJewelGlow = 0.0f;
+
+    ChromaticTuner::Reading currentTunerReading;
+    float smoothCents = 0.0f;
+    int tunerHoldFrames = 0;
 
     juce::Rectangle<int> utilityPanelBounds;
     juce::Rectangle<int> odPanelBounds;

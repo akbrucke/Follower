@@ -20,6 +20,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout FollowerAudioProcessor::crea
     p.push_back (std::make_unique<juce::AudioParameterBool> ("preFxVisible", "Show Pre-FX Drawer",    false));
     p.push_back (std::make_unique<juce::AudioParameterBool> ("tapeVisible",  "Show Tape Echo Drawer", false));
     p.push_back (std::make_unique<juce::AudioParameterBool> ("utilityVisible",  "Show Utility Drawer", false));
+    p.push_back (std::make_unique<juce::AudioParameterBool> (
+        juce::ParameterID { "tunerMute", 1 }, "Tuner Mute", false));
 
     // Left Drawer: Overdrive (+ Fatness & Variable Voltage)
     p.push_back (std::make_unique<juce::AudioParameterBool>  ("odOn",      "Overdrive On", true));
@@ -104,6 +106,7 @@ void FollowerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     currentBlockSize = samplesPerBlock;
     isPrepared = true;
 
+    tuner.prepare (sampleRate);
     overdrive.prepare (sampleRate);
     tremolo.prepare (sampleRate);
     preDelay.prepare (sampleRate);
@@ -246,6 +249,10 @@ void FollowerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     const int numChannels = buffer.getNumChannels();
     if (numSamples == 0 || numChannels == 0)
         return;
+
+    auto* utilParam = apvts.getRawParameterValue ("utilityVisible");
+    if (utilParam != nullptr && utilParam->load() > 0.5f && buffer.getNumChannels() > 0)
+        tuner.pushSamples (buffer.getReadPointer (0), buffer.getNumSamples());
 
     // 1. Update DSP Parameters
     const bool odOn = apvts.getRawParameterValue ("odOn")->load() > 0.5f;
@@ -410,6 +417,10 @@ void FollowerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     const float outDb = apvts.getRawParameterValue ("outLevel")->load();
     const float outGain = juce::Decibels::decibelsToGain (outDb);
     buffer.applyGain (outGain);
+
+    auto* muteParam = apvts.getRawParameterValue ("tunerMute");
+    if (muteParam != nullptr && muteParam->load() > 0.5f)
+        buffer.clear();
 
     float outPeak = 0.0f;
     const int numOutCh = juce::jmin (getTotalNumOutputChannels(), buffer.getNumChannels());
