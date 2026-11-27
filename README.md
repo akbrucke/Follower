@@ -1,4 +1,4 @@
-![Static Badge](https://img.shields.io/badge/Version-1.01-white) 
+![Static Badge](https://img.shields.io/badge/Version-1.1.0-white) 
 # Follower
 <p align="center">
    <img width="656" height="131" alt="FollowerLogo" src="https://github.com/user-attachments/assets/0b0b14ee-461a-44bb-9a54-a3c3c9762ec4" />  
@@ -113,6 +113,12 @@ Copy `Follower.vst3` into your system VST3 folder so your DAW can detect it.
 On Linux, this would be: `~/.vst3`  
 
 ## Changelog  
+FOLLOWER v1.1.0 (November 27, 2026)  
+-Added Windows installer  
+-Added full standalone version of the amp sim  
+-Added chromatic  tuner  
+-Added preset browser to plugin UI  
+
 FOLLOWER V1.01 (November 24, 2026)  
 -Improved graphics rendering  
 -Fixed drawer toggle LED states  
