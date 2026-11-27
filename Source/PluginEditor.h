@@ -66,6 +66,9 @@ public:
     explicit FollowerAudioProcessorEditor (FollowerAudioProcessor&);
     ~FollowerAudioProcessorEditor() override;
 
+
+    std::function<void()> onAudioSettingsClicked;
+
     void paint (juce::Graphics&) override;
     void resized() override;
 
@@ -80,6 +83,23 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> showOdAtt;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> showPreFxAtt;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> showTapeAtt;
+    // Header Utility Drawer Toggle Pill (Metering + Future Tuner)
+    juce::ToggleButton showUtilityBtn { "UTILITY" };
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> showUtilityAtt;
+    
+    // Audio button for standalone app
+    juce::TextButton audioSettingsBtn { "AUDIO" };
+
+    // Mute button for tuner
+    juce::ToggleButton tunerMuteBtn { "MUTE" };
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> tunerMuteAtt;
+
+    // Preset browser
+    juce::TextButton presetPrevBtn { "<" };
+    juce::ComboBox   presetBox;
+    juce::TextButton presetNextBtn { ">" };
+    juce::TextButton presetSaveBtn { "SAVE" };
+    void refreshPresetBox();
 
     // Left Collapsible Drawer: Overdrive (+ Fatness & Voltage)
     juce::ToggleButton odOnBtn { "PEDAL ON" };
@@ -136,10 +156,17 @@ private:
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     // Smooth Drawer Gliding Factors (0.0 = collapsed, 1.0 = fully open)
+    float utilityGlide      = 0.0f;
+    float smoothInPeak      = 0.0f;
+    float smoothOutPeak     = 0.0f;
+    float holdInPeak        = 0.0f;
+    float holdOutPeak       = 0.0f;
+    int   inHoldFrames      = 0;
+    int   outHoldFrames     = 0;
     float odGlide    = 1.0f;
     float preFxGlide = 1.0f;
     float tapeGlide  = 1.0f;
-
+    
     int   lastAmpChoice = 0;
     bool  lastGateFastState = false;
     bool  lastOdActive      = false;
@@ -147,6 +174,11 @@ private:
     bool  lastTapeActive    = false;
     float smoothJewelGlow = 0.0f;
 
+    ChromaticTuner::Reading currentTunerReading;
+    float smoothCents = 0.0f;
+    int tunerHoldFrames = 0;
+
+    juce::Rectangle<int> utilityPanelBounds;
     juce::Rectangle<int> odPanelBounds;
     juce::Rectangle<int> ampPanelBounds;
     juce::Rectangle<int> cabPanelBounds;

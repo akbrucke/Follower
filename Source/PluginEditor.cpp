@@ -429,13 +429,23 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
     setLookAndFeel (&followerLnf);
     buildSvgLogo();
 
+    audioSettingsBtn.setVisible (juce::JUCEApplicationBase::isStandaloneApp());
+    audioSettingsBtn.onClick = [this]
+    {
+        if (onAudioSettingsClicked)
+            onAudioSettingsClicked();
+    };
+
     // Header Drawer Toggles
     showOdAtt    = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "odVisible", showOdBtn);
     showPreFxAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "preFxVisible", showPreFxBtn);
     showTapeAtt  = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "tapeVisible", showTapeBtn);
+    showUtilityAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "utilityVisible", showUtilityBtn);
+    tunerMuteAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "tunerMute", tunerMuteBtn);
     addAndMakeVisible (showOdBtn);
     addAndMakeVisible (showPreFxBtn);
     addAndMakeVisible (showTapeBtn);
+    addAndMakeVisible (showUtilityBtn);
     lastOdActive   = p.apvts.getRawParameterValue ("odOn")->load() > 0.5f;
     lastPreActive  = (p.apvts.getRawParameterValue ("tremOn")->load() > 0.5f)
                   || (p.apvts.getRawParameterValue ("delayOn")->load() > 0.5f)
@@ -445,6 +455,70 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
     showOdBtn.getProperties().set ("circuitActive", lastOdActive);
     showPreFxBtn.getProperties().set ("circuitActive", lastPreActive);
     showTapeBtn.getProperties().set ("circuitActive", lastTapeActive);
+
+    // Audio button for standalone app
+    addChildComponent (audioSettingsBtn);
+    audioSettingsBtn.setVisible (juce::JUCEApplicationBase::isStandaloneApp());
+    audioSettingsBtn.onClick = [this]
+    {
+        if (onAudioSettingsClicked)
+            onAudioSettingsClicked();
+    };
+
+    // Tuner mute button
+    addChildComponent (tunerMuteBtn);
+
+    // Preset Browser
+    for (auto* comp : { static_cast<juce::Component*> (&presetPrevBtn),
+                        static_cast<juce::Component*> (&presetBox),
+                        static_cast<juce::Component*> (&presetNextBtn),
+                        static_cast<juce::Component*> (&presetSaveBtn) })
+    {
+        addChildComponent (comp);
+    }
+
+    presetBox.setJustificationType (juce::Justification::centredLeft);
+    refreshPresetBox();
+
+    presetPrevBtn.onClick = [this]
+    {
+        audioProcessor.presetManager->loadPreviousPreset();
+        refreshPresetBox();
+    };
+
+    presetNextBtn.onClick = [this]
+    {
+        audioProcessor.presetManager->loadNextPreset();
+        refreshPresetBox();
+    };
+
+    presetBox.onChange = [this]
+    {
+        const int selId = presetBox.getSelectedId();
+        if (selId > 0)
+            audioProcessor.presetManager->loadPreset (selId - 1);
+    };
+
+    presetSaveBtn.onClick = [this]
+    {
+        auto* alert = new juce::AlertWindow ("Save Preset",
+                                            "Enter a name for this Follower preset:",
+                                            juce::MessageBoxIconType::NoIcon);
+        alert->addTextEditor ("presetName", audioProcessor.presetManager->getCurrentPresetName(), "Preset Name:");
+        alert->addButton ("Save", 1, juce::KeyPress (juce::KeyPress::returnKey));
+        alert->addButton ("Cancel", 0, juce::KeyPress (juce::KeyPress::escapeKey));
+
+        alert->enterModalState (true, juce::ModalCallbackFunction::create (
+            [this, alert] (int result)
+            {
+                if (result == 1)
+                {
+                    audioProcessor.presetManager->savePreset (alert->getTextEditorContents ("presetName"));
+                    refreshPresetBox();
+                }
+                delete alert;
+            }));
+    };
 
     // Left Overdrive Drawer
     odOnAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "odOn", odOnBtn);
@@ -542,6 +616,22 @@ FollowerAudioProcessorEditor::~FollowerAudioProcessorEditor()
     setLookAndFeel (nullptr);
 }
 
+void FollowerAudioProcessorEditor::refreshPresetBox()
+{
+    presetBox.clear (juce::dontSendNotification);
+    auto& pm = *audioProcessor.presetManager;
+    const int count = pm.getNumPresets();
+
+    for (int i = 0; i < count; ++i)
+        presetBox.addItem (pm.getPresetName (i), i + 1);
+
+    const int idx = pm.getCurrentPresetIndex();
+    if (idx >= 0)
+        presetBox.setSelectedId (idx + 1, juce::dontSendNotification);
+    else
+        presetBox.setText (pm.getCurrentPresetName(), juce::dontSendNotification);
+}
+
 void FollowerAudioProcessorEditor::buildSvgLogo()
 {
     followerLogoSvg = juce::Drawable::createFromImageData (
@@ -574,14 +664,17 @@ void FollowerAudioProcessorEditor::syncVisibilityAndDimensions (bool immediate)
     const float targetOd    = (audioProcessor.apvts.getRawParameterValue ("odVisible")->load() > 0.5f) ? 1.0f : 0.0f;
     const float targetPreFx = (audioProcessor.apvts.getRawParameterValue ("preFxVisible")->load() > 0.5f) ? 1.0f : 0.0f;
     const float targetTape  = (audioProcessor.apvts.getRawParameterValue ("tapeVisible")->load() > 0.5f) ? 1.0f : 0.0f;
+    auto*       utilParam   = audioProcessor.apvts.getRawParameterValue ("utilityVisible");
+    const float targetUtility = (utilParam != nullptr && utilParam->load() > 0.5f) ? 1.0f : 0.0f;
     const int   ampChoice   = static_cast<int> (audioProcessor.apvts.getRawParameterValue ("ampSelect")->load());
     const bool  gateFast    = audioProcessor.apvts.getRawParameterValue ("gateFast")->load() > 0.5f;
 
     if (immediate)
     {
-        odGlide    = targetOd;
-        preFxGlide = targetPreFx;
-        tapeGlide  = targetTape;
+        odGlide      = targetOd;
+        preFxGlide   = targetPreFx;
+        tapeGlide    = targetTape;
+        utilityGlide = targetUtility;
     }
 
     lastAmpChoice     = ampChoice;
@@ -626,7 +719,7 @@ void FollowerAudioProcessorEditor::syncVisibilityAndDimensions (bool immediate)
         k->setVisible (showTapeControls);
 
     const int width  = 648 + juce::roundToInt (odGlide * 226.0f) + juce::roundToInt (tapeGlide * 266.0f);
-    const int height = 402 + juce::roundToInt (preFxGlide * 142.0f);
+    const int height = 402 + juce::roundToInt (preFxGlide * 142.0f) + juce::roundToInt (utilityGlide * 48.0f);
 
     if (getWidth() != width || getHeight() != height)
         setSize (width, height);
@@ -643,6 +736,8 @@ void FollowerAudioProcessorEditor::timerCallback()
     const float targetTape  = (audioProcessor.apvts.getRawParameterValue ("tapeVisible")->load() > 0.5f) ? 1.0f : 0.0f;
     const int   ampChoice   = static_cast<int> (audioProcessor.apvts.getRawParameterValue ("ampSelect")->load());
     const bool  gateFast    = audioProcessor.apvts.getRawParameterValue ("gateFast")->load() > 0.5f;
+    auto* utilParam = audioProcessor.apvts.getRawParameterValue ("utilityVisible");
+    const float targetUtility = (utilParam != nullptr && utilParam->load() > 0.5f) ? 1.0f : 0.0f;
 
     // Smooth exponential ease for drawer gliding (~180ms settle time at 30Hz)
     constexpr float glideSpeed = 0.42f; // Increased from 0.24f 60Hz speed
@@ -666,6 +761,7 @@ void FollowerAudioProcessorEditor::timerCallback()
     stepGlide (odGlide,    targetOd);
     stepGlide (preFxGlide, targetPreFx);
     stepGlide (tapeGlide,  targetTape);
+    stepGlide (utilityGlide,  targetUtility);
 
     if (animating || ampChoice != lastAmpChoice || gateFast != lastGateFastState)
         syncVisibilityAndDimensions (false);
@@ -697,6 +793,50 @@ void FollowerAudioProcessorEditor::timerCallback()
         showTapeBtn.getProperties().set ("circuitActive", tapeActive);
         showTapeBtn.repaint();
     }
+
+    if (utilityGlide > 0.15f)
+    {
+        auto updateMeter = [] (float raw, float& smooth, float& hold, int& holdFrames)
+        {
+            smooth = (raw > smooth) ? raw : (smooth * 0.80f);
+            if (raw >= hold)
+            {
+                hold = raw;
+                holdFrames = 24;
+            }
+            else if (holdFrames > 0)
+            {
+                --holdFrames;
+            }
+            else
+            {
+                hold *= 0.88f;
+            }
+        };
+
+        updateMeter (audioProcessor.inputPeakLevel.load (std::memory_order_relaxed),
+                    smoothInPeak, holdInPeak, inHoldFrames);
+        updateMeter (audioProcessor.outputPeakLevel.load (std::memory_order_relaxed),
+                    smoothOutPeak, holdOutPeak, outHoldFrames);
+
+        auto reading = audioProcessor.tuner.computePitch();
+        if (reading.valid)
+        {
+            currentTunerReading = reading;
+            smoothCents += (reading.cents - smoothCents) * 0.35f;
+            tunerHoldFrames = 12;
+        }
+        else if (tunerHoldFrames > 0)
+        {
+            --tunerHoldFrames;
+        }
+        else
+        {
+            currentTunerReading.valid = false;
+        }
+
+        repaint (utilityPanelBounds);
+    }
 }
 
 void FollowerAudioProcessorEditor::resized()
@@ -709,7 +849,57 @@ void FollowerAudioProcessorEditor::resized()
     showTapeBtn.setBounds  (header.removeFromRight (94).reduced (2, 9));
     showPreFxBtn.setBounds (header.removeFromRight (80).reduced (2, 9));
     showOdBtn.setBounds    (header.removeFromRight (98).reduced (2, 9));
+    showUtilityBtn.setBounds (header.removeFromRight (78).reduced (2, 9));
     bounds.removeFromTop (8);
+    if (utilityGlide > 0.02f)
+    {
+        const int utilH = juce::roundToInt (40.0f * utilityGlide);
+        utilityPanelBounds = bounds.removeFromTop (utilH);
+        bounds.removeFromTop (juce::roundToInt (8.0f * utilityGlide));
+
+        auto centerRow = utilityPanelBounds.reduced (196, 8);
+        tunerMuteBtn.setVisible (utilityGlide > 0.35f);
+        tunerMuteBtn.setBounds (centerRow.removeFromRight (52));
+
+        if (juce::JUCEApplicationBase::isStandaloneApp())
+        {
+            centerRow.removeFromRight (6);
+            audioSettingsBtn.setVisible (utilityGlide > 0.35f);
+            audioSettingsBtn.setBounds (centerRow.removeFromRight (58));
+        }
+    }
+    else
+    {
+        utilityPanelBounds = {};
+        tunerMuteBtn.setVisible (false);
+        audioSettingsBtn.setVisible (false);
+    }
+
+    // Show Preset Strip only at full width
+    const bool showPresetStrip = (odGlide > 0.92f && tapeGlide > 0.92f);
+    presetPrevBtn.setVisible (showPresetStrip);
+    presetBox.setVisible     (showPresetStrip);
+    presetNextBtn.setVisible (showPresetStrip);
+    presetSaveBtn.setVisible (showPresetStrip);
+
+    if (showPresetStrip)
+    {
+        // Total strip width = 22 + 2 + 168 + 2 + 22 + 6 + 44 = 266 px, ending 12 px left of showUtilityBtn
+        int stripRight = showUtilityBtn.getX() - 12;
+        const int y    = 25;
+        const int h    = 24;
+
+        presetSaveBtn.setBounds (stripRight - 44, y, 44, h);
+        stripRight -= (44 + 6);
+
+        presetNextBtn.setBounds (stripRight - 22, y, 22, h);
+        stripRight -= (22 + 2);
+
+        presetBox.setBounds     (stripRight - 168, y, 168, h);
+        stripRight -= (168 + 2);
+
+        presetPrevBtn.setBounds (stripRight - 22, y, 22, h);
+    }
 
     // Bottom Collapsible Drawer: Pre-Amp Time-Based Effects (glides vertically)
     if (preFxGlide > 0.02f)
@@ -958,15 +1148,27 @@ void FollowerAudioProcessorEditor::paint (juce::Graphics& g)
     auto header = getLocalBounds().reduced (14).removeFromTop (46).toFloat();
     drawSvgHeaderLogo (g, header.removeFromLeft (192.0f));
 
-    g.setColour (FollowerPalette::slateMuted);
-    g.setFont (FollowerLookAndFeel::getInterFont (10.0f, true));
-    g.drawText ("DUAL-AMP PRE & POST TIME-BASED RIG",
-                header.withTrimmedLeft (28.0f).withRight (header.getRight() - 315.0f),
-                juce::Justification::centredLeft);
+    // Only draw subtitle when the full text fits cleanly before the leftmost pill button
+    {
+        const juce::String subtitleText = "DUAL-AMP PRE & POST TIME-BASED RIG";
+        const auto subtitleFont = FollowerLookAndFeel::getInterFont (10.0f, true);
+        const float rightLimit = presetPrevBtn.isVisible()
+                             ? static_cast<float> (presetPrevBtn.getX()) - 12.0f
+                             : static_cast<float> (showUtilityBtn.getX()) - 12.0f;
+        const auto subtitleArea = header.withTrimmedLeft (28.0f).withRight (rightLimit);
+        const float textWidth   = juce::GlyphArrangement::getStringWidth (subtitleFont, subtitleText);
+
+        if (subtitleArea.getWidth() >= textWidth + 2.0f)
+        {
+            g.setColour (FollowerPalette::slateMuted);
+            g.setFont (subtitleFont);
+            g.drawText (subtitleText, subtitleArea, juce::Justification::centredLeft, false);
+        }
+    }
 
     drawBlueJewelIndicator (g, header.removeFromRight (30.0f));
 
-    // Hairline divider under header (Meadow signature)
+    // Hairline divider under header
     g.setColour (FollowerPalette::inkBlack.withAlpha (0.14f));
     g.drawLine (16.0f, 62.0f, static_cast<float> (getWidth()) - 16.0f, 62.0f, 1.0f);
 
@@ -998,6 +1200,90 @@ void FollowerAudioProcessorEditor::paint (juce::Graphics& g)
     drawCard (cabPanelBounds,   {}, 1.0f);
     drawCard (preFxPanelBounds, "PRE-AMP TIME-BASED EFFECTS", preFxGlide);
     drawCard (tapePanelBounds,  "DUSK AUDIO TAPE ECHO", tapeGlide);
+
+    // Utility panel sub-header
+    if (utilityGlide > 0.35f)
+    {
+        auto uInner = utilityPanelBounds.reduced (12, 8).toFloat();
+        const float meterW = 175.0f;
+
+        auto drawHorizontalMeter = [&] (juce::Rectangle<float> area, const juce::String& label,
+                                        float linearPeak, float linearHold)
+        {
+            const float db     = juce::Decibels::gainToDecibels (linearPeak, -60.0f);
+            const float holdDb = juce::Decibels::gainToDecibels (linearHold, -60.0f);
+            const float norm   = juce::jlimit (0.0f, 1.0f, (db + 60.0f) / 66.0f);
+            const float holdN  = juce::jlimit (0.0f, 1.0f, (holdDb + 60.0f) / 66.0f);
+            const bool  clip   = (db > -0.1f);
+
+            g.setColour (FollowerPalette::slateMuted.withAlpha (utilityGlide));
+            g.setFont (FollowerLookAndFeel::getInterFont (9.5f, true));
+            g.drawText (label, area.removeFromLeft (34.0f), juce::Justification::centredLeft);
+
+            const juce::String dbStr = (db <= -59.5f) ? "-inf" : juce::String (db, 1) + " dB";
+            g.setColour ((clip ? juce::Colour (0xFFE53935) : FollowerPalette::inkBlack).withAlpha (utilityGlide));
+            g.drawText (dbStr, area.removeFromRight (48.0f), juce::Justification::centredRight);
+
+            auto track = area.reduced (4.0f, 6.0f);
+            g.setColour (FollowerPalette::panelRecessed.withAlpha (utilityGlide));
+            g.fillRoundedRectangle (track, 3.0f);
+
+            if (norm > 0.005f)
+            {
+                auto fill = track.withWidth (track.getWidth() * norm);
+                g.setColour ((clip ? juce::Colour (0xFFE53935) : FollowerPalette::ledBlue).withAlpha (utilityGlide));
+                g.fillRoundedRectangle (fill, 3.0f);
+            }
+
+            if (holdN > 0.01f)
+            {
+                const float hx = track.getX() + track.getWidth() * holdN;
+                g.setColour (FollowerPalette::inkBlack.withAlpha (0.75f * utilityGlide));
+                g.drawLine (hx, track.getY(), hx, track.getBottom(), 1.5f);
+            }
+
+            g.setColour (FollowerPalette::borderHairline.withAlpha (utilityGlide));
+            g.drawRoundedRectangle (track, 3.0f, 1.0f);
+        };
+
+        drawHorizontalMeter (uInner.removeFromLeft (meterW),  "IN",  smoothInPeak,  holdInPeak);
+        drawHorizontalMeter (uInner.removeFromRight (meterW), "OUT", smoothOutPeak, holdOutPeak);
+
+        // Chromatic Tuner in the remaining center space
+        auto tunerArea = uInner;
+        tunerArea.removeFromLeft (8.0f);
+        tunerArea.removeFromRight (juce::JUCEApplicationBase::isStandaloneApp() ? 124.0f : 62.0f);
+
+        auto noteBox = tunerArea.removeFromLeft (44.0f);
+        const bool inTune = currentTunerReading.valid && std::abs (smoothCents) <= 3.0f;
+
+        g.setColour ((inTune ? FollowerPalette::ledBlue : FollowerPalette::inkBlack).withAlpha (utilityGlide));
+        g.setFont (FollowerLookAndFeel::getInterFont (14.0f, true));
+        g.drawText (currentTunerReading.valid ? currentTunerReading.noteName : "--",
+                    noteBox, juce::Justification::centred);
+
+        auto centsTrack = tunerArea.reduced (4.0f, 6.0f);
+        g.setColour (FollowerPalette::panelRecessed.withAlpha (utilityGlide));
+        g.fillRoundedRectangle (centsTrack, 3.0f);
+
+        const float centerX = centsTrack.getCentreX();
+        g.setColour (FollowerPalette::inkBlack.withAlpha (0.35f * utilityGlide));
+        g.drawLine (centerX, centsTrack.getY() + 1.0f, centerX, centsTrack.getBottom() - 1.0f, 1.5f);
+
+        if (currentTunerReading.valid)
+        {
+            const float normOffset = juce::jlimit (-1.0f, 1.0f, smoothCents / 50.0f);
+            const float indicatorX = centerX + normOffset * (centsTrack.getWidth() * 0.46f);
+            auto pillRect = juce::Rectangle<float> (10.0f, centsTrack.getHeight() - 2.0f)
+                                .withCentre ({ indicatorX, centsTrack.getCentreY() });
+
+            g.setColour ((inTune ? FollowerPalette::ledBlue : FollowerPalette::inkBlack).withAlpha (utilityGlide));
+            g.fillRoundedRectangle (pillRect, 2.5f);
+        }
+
+        g.setColour (FollowerPalette::borderHairline.withAlpha (utilityGlide));
+        g.drawRoundedRectangle (centsTrack, 3.0f, 1.0f);
+    }
 
     // Cabinet & Filter sub-headers
     if (! cabPanelBounds.isEmpty())

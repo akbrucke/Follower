@@ -47,19 +47,45 @@ target_sources(Follower
         Source/PluginProcessor.cpp
         Source/PluginEditor.h
         Source/PluginEditor.cpp
+        Source/PresetManager.h
+        Source/StandaloneApp.cpp
         Source/Dsp/DspHelpers.h
         Source/Dsp/Overdrive.h
         Source/Dsp/PreAmpEffects.h
         Source/Dsp/TrainerMarkIII.h
         Source/Dsp/Rocker100.h
         Source/Dsp/DuskTapeEcho.h
+        Source/Dsp/ChromaticTuner.h
 )
+
+set(ASIO_SDK_DIR "" CACHE PATH "Path to Steinberg ASIO SDK root directory")
+
+if("${ASIO_SDK_DIR}" STREQUAL "" AND DEFINED ENV{ASIO_SDK_DIR})
+    file(TO_CMAKE_PATH "$ENV{ASIO_SDK_DIR}" _asio_env_path)
+    set(ASIO_SDK_DIR "${_asio_env_path}" CACHE PATH "Path to Steinberg ASIO SDK root directory" FORCE)
+endif()
+
+if(WIN32)
+    if(NOT "${ASIO_SDK_DIR}" STREQUAL "" AND EXISTS "${ASIO_SDK_DIR}/common/iasiodrv.h")
+        # Apply to Follower, Follower_Standalone, and any JUCE module targets built for them
+        include_directories(
+            "${ASIO_SDK_DIR}/common"
+            "${ASIO_SDK_DIR}/host"
+            "${ASIO_SDK_DIR}/host/pc"
+        )
+        add_compile_definitions(JUCE_ASIO=1)
+        message(STATUS "ASIO SDK enabled from: ${ASIO_SDK_DIR}")
+    else()
+        message(WARNING "ASIO SDK NOT found! Checked path: '${ASIO_SDK_DIR}/common/iasiodrv.h'")
+    endif()
+endif()
 
 target_compile_definitions(Follower
     PUBLIC
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
 )
 
 target_link_libraries(Follower
@@ -67,6 +93,7 @@ target_link_libraries(Follower
         FollowerAssets
         juce::juce_audio_utils
         juce::juce_dsp
+        juce::juce_audio_plugin_client
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags

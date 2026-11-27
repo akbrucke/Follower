@@ -5,10 +5,22 @@
 
 FollowerAudioProcessor::FollowerAudioProcessor()
     : AudioProcessor (BusesProperties()
-                        .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-      apvts (*this, nullptr, "PARAMETERS", createParameterLayout())
+                          .withInput  ("Input",  juce::AudioChannelSet::mono(), true)
+                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+      apvts (*this, nullptr, "Parameters", createParameterLayout())
 {
+    // Existing constructor initialization lines here...
+
+    presetManager = std::make_unique<PresetManager> (
+        apvts,
+        [this]() -> juce::String { return usingCustomIr ? customIrFilePath : juce::String(); },
+        [this] (const juce::String& path)
+        {
+            if (path.isNotEmpty() && juce::File (path).existsAsFile())
+                loadUserIrFile (juce::File (path));
+            else
+                selectBuiltInIr (static_cast<int> (apvts.getRawParameterValue ("irSelect")->load()));
+        });
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout FollowerAudioProcessor::createParameterLayout()
@@ -19,6 +31,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout FollowerAudioProcessor::crea
     p.push_back (std::make_unique<juce::AudioParameterBool> ("odVisible",    "Show Overdrive Drawer", true));
     p.push_back (std::make_unique<juce::AudioParameterBool> ("preFxVisible", "Show Pre-FX Drawer",    false));
     p.push_back (std::make_unique<juce::AudioParameterBool> ("tapeVisible",  "Show Tape Echo Drawer", false));
+    p.push_back (std::make_unique<juce::AudioParameterBool> ("utilityVisible",  "Show Utility Drawer", false));
+    p.push_back (std::make_unique<juce::AudioParameterBool> (
+        juce::ParameterID { "tunerMute", 1 }, "Tuner Mute", false));
 
     // Left Drawer: Overdrive (+ Fatness & Variable Voltage)
     p.push_back (std::make_unique<juce::AudioParameterBool>  ("odOn",      "Overdrive On", true));
@@ -103,6 +118,7 @@ void FollowerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     currentBlockSize = samplesPerBlock;
     isPrepared = true;
 
+    tuner.prepare (sampleRate);
     overdrive.prepare (sampleRate);
     tremolo.prepare (sampleRate);
     preDelay.prepare (sampleRate);
@@ -233,12 +249,22 @@ void FollowerAudioProcessor::loadUserIrFile (const juce::File& file)
 
 void FollowerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
+    float inPeak = 0.0f;
+    const int numInCh = juce::jmin (getTotalNumInputChannels(), buffer.getNumChannels());
+    for (int ch = 0; ch < numInCh; ++ch)
+        inPeak = juce::jmax (inPeak, buffer.getMagnitude (ch, 0, buffer.getNumSamples()));
+    inputPeakLevel.store (inPeak, std::memory_order_relaxed);
+
     juce::ScopedNoDenormals noDenormals;
 
     const int numSamples  = buffer.getNumSamples();
     const int numChannels = buffer.getNumChannels();
     if (numSamples == 0 || numChannels == 0)
         return;
+
+    auto* utilParam = apvts.getRawParameterValue ("utilityVisible");
+    if (utilParam != nullptr && utilParam->load() > 0.5f && buffer.getNumChannels() > 0)
+        tuner.pushSamples (buffer.getReadPointer (0), buffer.getNumSamples());
 
     // 1. Update DSP Parameters
     const bool odOn = apvts.getRawParameterValue ("odOn")->load() > 0.5f;
@@ -403,6 +429,16 @@ void FollowerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     const float outDb = apvts.getRawParameterValue ("outLevel")->load();
     const float outGain = juce::Decibels::decibelsToGain (outDb);
     buffer.applyGain (outGain);
+
+    auto* muteParam = apvts.getRawParameterValue ("tunerMute");
+    if (muteParam != nullptr && muteParam->load() > 0.5f)
+        buffer.clear();
+
+    float outPeak = 0.0f;
+    const int numOutCh = juce::jmin (getTotalNumOutputChannels(), buffer.getNumChannels());
+    for (int ch = 0; ch < numOutCh; ++ch)
+        outPeak = juce::jmax (outPeak, buffer.getMagnitude (ch, 0, buffer.getNumSamples()));
+    outputPeakLevel.store (outPeak, std::memory_order_relaxed);
 }
 
 juce::AudioProcessorEditor* FollowerAudioProcessor::createEditor()

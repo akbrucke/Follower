@@ -10,7 +10,7 @@ namespace FollowerDsp
 {
     /**
      * Post-Cabinet True Stereo 3-Head Tape Echo & Spring Reverb Engine
-     * Inspired by Dusk Audio Tape Echo (GPL-3.0) / Roland RE-201 Space Echo architecture:
+     * Inspired by Dusk Audio Tape Echo (GPL-3.0) architecture:
      * - Independent Left & Right tape loops with subtle stereo head spacing & quadrature wow/flutter
      * - 3 playback heads per channel (Head 1: ~69-177ms, Head 2: ~131-337ms, Head 3: ~189-489ms)
      * - 12 authentic selector modes (Heads 1..3, multi-head combos, + Spring Reverb, Reverb Only)
