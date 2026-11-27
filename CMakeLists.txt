@@ -23,7 +23,7 @@ juce_add_plugin(Follower
     COPY_PLUGIN_AFTER_BUILD FALSE
     PLUGIN_MANUFACTURER_CODE Brck
     PLUGIN_CODE Fllw
-    FORMATS VST3
+    FORMATS VST3 Standalone
     PRODUCT_NAME "Follower"
 )
 

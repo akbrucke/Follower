@@ -84,9 +84,10 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> showPreFxAtt;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> showTapeAtt;
     // Header Utility Drawer Toggle Pill (Metering + Future Tuner)
-    juce::ToggleButton showUtilityBtn { "UTILITY" };
+    juce::ToggleButton showUtilityBtn { "" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> showUtilityAtt;
-    
+    void paintOverChildren (juce::Graphics& g) override;
+
     // Audio button for standalone app
     juce::TextButton audioSettingsBtn { "AUDIO" };
 

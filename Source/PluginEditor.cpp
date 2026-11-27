@@ -445,7 +445,10 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
     addAndMakeVisible (showOdBtn);
     addAndMakeVisible (showPreFxBtn);
     addAndMakeVisible (showTapeBtn);
-    addAndMakeVisible (showUtilityBtn);
+   addAndMakeVisible (showUtilityBtn);
+    showUtilityBtn.setButtonText ("");
+    showUtilityBtn.setTooltip ("Toggle Chromatic Tuner & I/O Meters");
+
     lastOdActive   = p.apvts.getRawParameterValue ("odOn")->load() > 0.5f;
     lastPreActive  = (p.apvts.getRawParameterValue ("tremOn")->load() > 0.5f)
                   || (p.apvts.getRawParameterValue ("delayOn")->load() > 0.5f)
@@ -849,7 +852,7 @@ void FollowerAudioProcessorEditor::resized()
     showTapeBtn.setBounds  (header.removeFromRight (94).reduced (2, 9));
     showPreFxBtn.setBounds (header.removeFromRight (80).reduced (2, 9));
     showOdBtn.setBounds    (header.removeFromRight (98).reduced (2, 9));
-    showUtilityBtn.setBounds (header.removeFromRight (78).reduced (2, 9));
+    showUtilityBtn.setBounds (header.removeFromRight (46).reduced (2, 9));
     bounds.removeFromTop (8);
     if (utilityGlide > 0.02f)
     {
@@ -1333,4 +1336,38 @@ void FollowerAudioProcessorEditor::paint (juce::Graphics& g)
             g.drawText (names[i], sub, juce::Justification::centredLeft);
         }
     }
+
+}
+
+void FollowerAudioProcessorEditor::paintOverChildren (juce::Graphics& g)
+{
+    if (! showUtilityBtn.isVisible())
+        return;
+
+    const auto b      = showUtilityBtn.getBounds().toFloat();
+    const float cx    = b.getCentreX() + 6.5f; // Clear separation to the right of the LED dot
+    const float cy    = b.getCentreY();
+    const bool active = showUtilityBtn.getToggleState();
+
+    g.setColour (active ? FollowerPalette::ledBlue : FollowerPalette::inkBlack);
+
+    juce::Path fork;
+    const float prongHalfW = 2.6f;
+    const float topY       = cy - 6.0f;
+    const float yokeY      = cy + 0.8f;
+    const float stemBotY   = cy + 6.2f;
+
+    // Two straight parallel tines joined by a flat U-yoke
+    fork.startNewSubPath (cx - prongHalfW, topY);
+    fork.lineTo          (cx - prongHalfW, yokeY);
+    fork.lineTo          (cx + prongHalfW, yokeY);
+    fork.lineTo          (cx + prongHalfW, topY);
+
+    // Straight vertical handle
+    fork.startNewSubPath (cx, yokeY);
+    fork.lineTo          (cx, stemBotY);
+
+    g.strokePath (fork, juce::PathStrokeType (1.5f, juce::PathStrokeType::curved,
+                                              juce::PathStrokeType::rounded));
+    g.fillEllipse (cx - 1.3f, stemBotY - 1.0f, 2.6f, 2.6f);
 }
