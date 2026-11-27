@@ -36,7 +36,7 @@ After the cabinet, in true stereo, lives an implementation of the incredible **T
 *Licensing notice: Tape Echo by Dusk Audio is released under the GPLv3 license, the same license that Follower is released under.*  
 
 ### Utility Features
-Lastly, Follower includes an effective noise gate, with a toggle for fast or slow release, and high-pass/low-pass filters, for getting mix-ready tones.  
+Lastly, Follower includes an effective noise gate, with a toggle for fast or slow release, high-pass/low-pass filters, for getting mix-ready tones, a collapsible chromatic tuner with mute function, and a preset browser, for browsing, saving, and flipping through presets.  
 
 ## Screenshots  
 
