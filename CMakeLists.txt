@@ -47,6 +47,8 @@ target_sources(Follower
         Source/PluginProcessor.cpp
         Source/PluginEditor.h
         Source/PluginEditor.cpp
+        Source/PresetManager.h
+        Source/StandaloneApp.cpp
         Source/Dsp/DspHelpers.h
         Source/Dsp/Overdrive.h
         Source/Dsp/PreAmpEffects.h
@@ -54,7 +56,6 @@ target_sources(Follower
         Source/Dsp/Rocker100.h
         Source/Dsp/DuskTapeEcho.h
         Source/Dsp/ChromaticTuner.h
-        Source/StandaloneApp.cpp
 )
 
 set(ASIO_SDK_DIR "" CACHE PATH "Path to Steinberg ASIO SDK root directory")

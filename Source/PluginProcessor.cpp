@@ -5,10 +5,22 @@
 
 FollowerAudioProcessor::FollowerAudioProcessor()
     : AudioProcessor (BusesProperties()
-                        .withInput ("Input", juce::AudioChannelSet::mono(), true)
-                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-      apvts (*this, nullptr, "PARAMETERS", createParameterLayout())
+                          .withInput  ("Input",  juce::AudioChannelSet::mono(), true)
+                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+      apvts (*this, nullptr, "Parameters", createParameterLayout())
 {
+    // Existing constructor initialization lines here...
+
+    presetManager = std::make_unique<PresetManager> (
+        apvts,
+        [this]() -> juce::String { return usingCustomIr ? customIrFilePath : juce::String(); },
+        [this] (const juce::String& path)
+        {
+            if (path.isNotEmpty() && juce::File (path).existsAsFile())
+                loadUserIrFile (juce::File (path));
+            else
+                selectBuiltInIr (static_cast<int> (apvts.getRawParameterValue ("irSelect")->load()));
+        });
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout FollowerAudioProcessor::createParameterLayout()

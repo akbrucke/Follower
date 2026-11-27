@@ -8,6 +8,7 @@
 #include "Dsp/Rocker100.h"
 #include "Dsp/DuskTapeEcho.h"
 #include "Dsp/ChromaticTuner.h"
+#include "PresetManager.h"
 
 class FollowerAudioProcessor : public juce::AudioProcessor
 {
@@ -48,6 +49,7 @@ public:
     std::atomic<float> inputPeakLevel  { 0.0f };
     std::atomic<float> outputPeakLevel { 0.0f };
     ChromaticTuner tuner;
+    std::unique_ptr<PresetManager> presetManager;
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -60,6 +62,7 @@ private:
     FollowerDsp::Rocker100Amp      rockerAmp;
     FollowerDsp::DuskTapeEcho      tapeEcho;
 
+    juce::String customIrFilePath;
     juce::dsp::Convolution cabinetConvolution;
     juce::dsp::NoiseGate<float> noiseGate;
     juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> hpfFilter;
@@ -69,7 +72,6 @@ private:
     int currentBlockSize = 512;
     bool isPrepared = false;
     bool usingCustomIr = false;
-    juce::String customIrFilePath;
     juce::String loadedIrName { "ORANGE 412 57" };
     int lastBuiltInIrIndex = -1;
     bool lastGateFast = false;

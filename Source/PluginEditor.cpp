@@ -468,6 +468,58 @@ FollowerAudioProcessorEditor::FollowerAudioProcessorEditor (FollowerAudioProcess
     // Tuner mute button
     addChildComponent (tunerMuteBtn);
 
+    // Preset Browser
+    for (auto* comp : { static_cast<juce::Component*> (&presetPrevBtn),
+                        static_cast<juce::Component*> (&presetBox),
+                        static_cast<juce::Component*> (&presetNextBtn),
+                        static_cast<juce::Component*> (&presetSaveBtn) })
+    {
+        addChildComponent (comp);
+    }
+
+    presetBox.setJustificationType (juce::Justification::centredLeft);
+    refreshPresetBox();
+
+    presetPrevBtn.onClick = [this]
+    {
+        audioProcessor.presetManager->loadPreviousPreset();
+        refreshPresetBox();
+    };
+
+    presetNextBtn.onClick = [this]
+    {
+        audioProcessor.presetManager->loadNextPreset();
+        refreshPresetBox();
+    };
+
+    presetBox.onChange = [this]
+    {
+        const int selId = presetBox.getSelectedId();
+        if (selId > 0)
+            audioProcessor.presetManager->loadPreset (selId - 1);
+    };
+
+    presetSaveBtn.onClick = [this]
+    {
+        auto* alert = new juce::AlertWindow ("Save Preset",
+                                            "Enter a name for this Follower preset:",
+                                            juce::MessageBoxIconType::NoIcon);
+        alert->addTextEditor ("presetName", audioProcessor.presetManager->getCurrentPresetName(), "Preset Name:");
+        alert->addButton ("Save", 1, juce::KeyPress (juce::KeyPress::returnKey));
+        alert->addButton ("Cancel", 0, juce::KeyPress (juce::KeyPress::escapeKey));
+
+        alert->enterModalState (true, juce::ModalCallbackFunction::create (
+            [this, alert] (int result)
+            {
+                if (result == 1)
+                {
+                    audioProcessor.presetManager->savePreset (alert->getTextEditorContents ("presetName"));
+                    refreshPresetBox();
+                }
+                delete alert;
+            }));
+    };
+
     // Left Overdrive Drawer
     odOnAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, "odOn", odOnBtn);
     addAndMakeVisible (odOnBtn);
@@ -562,6 +614,22 @@ FollowerAudioProcessorEditor::~FollowerAudioProcessorEditor()
 {
     stopTimer();
     setLookAndFeel (nullptr);
+}
+
+void FollowerAudioProcessorEditor::refreshPresetBox()
+{
+    presetBox.clear (juce::dontSendNotification);
+    auto& pm = *audioProcessor.presetManager;
+    const int count = pm.getNumPresets();
+
+    for (int i = 0; i < count; ++i)
+        presetBox.addItem (pm.getPresetName (i), i + 1);
+
+    const int idx = pm.getCurrentPresetIndex();
+    if (idx >= 0)
+        presetBox.setSelectedId (idx + 1, juce::dontSendNotification);
+    else
+        presetBox.setText (pm.getCurrentPresetName(), juce::dontSendNotification);
 }
 
 void FollowerAudioProcessorEditor::buildSvgLogo()
@@ -805,6 +873,32 @@ void FollowerAudioProcessorEditor::resized()
         utilityPanelBounds = {};
         tunerMuteBtn.setVisible (false);
         audioSettingsBtn.setVisible (false);
+    }
+
+    // Show Preset Strip only at full width
+    const bool showPresetStrip = (odGlide > 0.92f && tapeGlide > 0.92f);
+    presetPrevBtn.setVisible (showPresetStrip);
+    presetBox.setVisible     (showPresetStrip);
+    presetNextBtn.setVisible (showPresetStrip);
+    presetSaveBtn.setVisible (showPresetStrip);
+
+    if (showPresetStrip)
+    {
+        // Total strip width = 22 + 2 + 168 + 2 + 22 + 6 + 44 = 266 px, ending 12 px left of showUtilityBtn
+        int stripRight = showUtilityBtn.getX() - 12;
+        const int y    = 25;
+        const int h    = 24;
+
+        presetSaveBtn.setBounds (stripRight - 44, y, 44, h);
+        stripRight -= (44 + 6);
+
+        presetNextBtn.setBounds (stripRight - 22, y, 22, h);
+        stripRight -= (22 + 2);
+
+        presetBox.setBounds     (stripRight - 168, y, 168, h);
+        stripRight -= (168 + 2);
+
+        presetPrevBtn.setBounds (stripRight - 22, y, 22, h);
     }
 
     // Bottom Collapsible Drawer: Pre-Amp Time-Based Effects (glides vertically)
@@ -1058,7 +1152,9 @@ void FollowerAudioProcessorEditor::paint (juce::Graphics& g)
     {
         const juce::String subtitleText = "DUAL-AMP PRE & POST TIME-BASED RIG";
         const auto subtitleFont = FollowerLookAndFeel::getInterFont (10.0f, true);
-        const float rightLimit  = static_cast<float> (showUtilityBtn.getX()) - 12.0f;
+        const float rightLimit = presetPrevBtn.isVisible()
+                             ? static_cast<float> (presetPrevBtn.getX()) - 12.0f
+                             : static_cast<float> (showUtilityBtn.getX()) - 12.0f;
         const auto subtitleArea = header.withTrimmedLeft (28.0f).withRight (rightLimit);
         const float textWidth   = juce::GlyphArrangement::getStringWidth (subtitleFont, subtitleText);
 

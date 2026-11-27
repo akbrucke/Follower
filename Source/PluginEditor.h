@@ -94,6 +94,13 @@ private:
     juce::ToggleButton tunerMuteBtn { "MUTE" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> tunerMuteAtt;
 
+    // Preset browser
+    juce::TextButton presetPrevBtn { "<" };
+    juce::ComboBox   presetBox;
+    juce::TextButton presetNextBtn { ">" };
+    juce::TextButton presetSaveBtn { "SAVE" };
+    void refreshPresetBox();
+
     // Left Collapsible Drawer: Overdrive (+ Fatness & Voltage)
     juce::ToggleButton odOnBtn { "PEDAL ON" };
     FollowerKnob odGainKnob, odToneKnob, odLevelKnob, odFatnessKnob, odVoltageKnob;
