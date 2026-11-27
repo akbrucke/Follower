@@ -25,6 +25,7 @@ juce_add_plugin(Follower
     PLUGIN_CODE Fllw
     FORMATS VST3 Standalone
     PRODUCT_NAME "Follower"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/Resources/FollowerIcon.png"
 )
 
 # Embed the 4 Orange PPC412 Impulse Responses + Cross-Platform Typography (EBGaramond & Inter)

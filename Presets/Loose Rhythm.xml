@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PARAMETERS customIrPath="">
+  <PARAM id="ampSelect" value="1.0" />
+  <PARAM id="cabBypass" value="0.0" />
+  <PARAM id="delayFb" value="2.049999952316284" />
+  <PARAM id="delayMix" value="2.569999933242798" />
+  <PARAM id="delayOn" value="0.0" />
+  <PARAM id="delayTime" value="96.25" />
+  <PARAM id="gateThresh" value="-57.65999984741211" />
+  <PARAM id="hpfFreq" value="71.55999755859375" />
+  <PARAM id="irSelect" value="0.0" />
+  <PARAM id="lpfFreq" value="20000.0" />
+  <PARAM id="odFatness" value="0.0" />
+  <PARAM id="odGain" value="5.690000057220459" />
+  <PARAM id="odLevel" value="4.0" />
+  <PARAM id="odOn" value="1.0" />
+  <PARAM id="odTone" value="9.0" />
+  <PARAM id="odVisible" value="1.0" />
+  <PARAM id="odVoltage" value="6.980000019073486" />
+  <PARAM id="orBass" value="2.559999942779541" />
+  <PARAM id="orDirty" value="0.0" />
+  <PARAM id="orGain" value="6.819999694824219" />
+  <PARAM id="orMid" value="6.0" />
+  <PARAM id="orTreble" value="10.0" />
+  <PARAM id="orVolume" value="7.690000057220459" />
+  <PARAM id="outLevel" value="0.0" />
+  <PARAM id="preFxVisible" value="0.0" />
+  <PARAM id="revDamp" value="2712.5" />
+  <PARAM id="revDecay" value="2.240000009536743" />
+  <PARAM id="revMix" value="1.319999933242798" />
+  <PARAM id="revOn" value="0.0" />
+  <PARAM id="revPreDel" value="13.75" />
+  <PARAM id="tapeAge" value="2.0" />
+  <PARAM id="tapeBass" value="0.0" />
+  <PARAM id="tapeEcho" value="6.5" />
+  <PARAM id="tapeInt" value="5.809999942779541" />
+  <PARAM id="tapeMix" value="4.009999752044678" />
+  <PARAM id="tapeMode" value="1.0" />
+  <PARAM id="tapeOn" value="0.0" />
+  <PARAM id="tapeRate" value="3.389999866485596" />
+  <PARAM id="tapeRev" value="3.0" />
+  <PARAM id="tapeTreble" value="5.850000381469727" />
+  <PARAM id="tapeVisible" value="0.0" />
+  <PARAM id="tapeWow" value="7.5" />
+  <PARAM id="trBass" value="6.819999694824219" />
+  <PARAM id="trBoost" value="1.0" />
+  <PARAM id="trGain" value="8.189999580383301" />
+  <PARAM id="trMaster" value="8.189999580383301" />
+  <PARAM id="trMid" value="4.25" />
+  <PARAM id="trTreble" value="7.37999963760376" />
+  <PARAM id="tremDepth" value="6.509999752044678" />
+  <PARAM id="tremOn" value="0.0" />
+  <PARAM id="tremRate" value="9.470000267028809" />
+  <PARAM id="tremWave" value="6.819999694824219" />
+  <PARAM id="gateFast" />
+</PARAMETERS>

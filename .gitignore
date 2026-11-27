@@ -47,6 +47,9 @@
 cmake-build-*/
 out/
 
+# installer build directory
+installer_out/
+
 # CMake generated files
 CMakeFiles/
 CMakeCache.txt
